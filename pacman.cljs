@@ -343,8 +343,7 @@
 
 (defn draw-board [field board]
   (doall (map 
-    #(let [[x y] (first %)
-           pt    (second %)]
+    #(let [[[x y] pt] %]
        (cond
          (contains? pt :pellet) (draw-pellet field (tile x y))
          (contains? pt :energy) (draw-energy field (tile x y))))
