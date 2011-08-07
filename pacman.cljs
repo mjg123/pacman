@@ -46,7 +46,7 @@
 "      p  oooooooooo  p      "
 "      p  o        o  p      "
 "      p  o gggggg o  p      "
-" ooooopooo gggggg ooopooooo "
+"oooooopooo gggggg ooopoooooo"
 "      p  o gggggg o  p      "
 "      p  o        o  p      "
 "      p  oooooooooo  p      "
@@ -71,21 +71,21 @@
   ([n] (range n '()))
   ([n l] (if (= 0 n) l (recur (dec n) (conj l (- n 1))))))
 
-(def board (atom {}))
-
 (defn read-board []
-  (doall (for [y (range (count board-str)) 
-        x (range (count (board-str 0)))]
-    (let [sq (get-in board-str [y x])]
-       (swap! board assoc [x y] 
-         (cond
-           (= sq \ ) {}
-           (= sq \p) {:open nil :pellet nil}
-           (= sq \o) {:open nil}
-           (= sq \e) {:open nil :energy nil}
-           :else nil))))))
+  (let [board (atom {[-1 17] {:open nil} [28 17] {:open nil}})]
+    (doall (for [y (range (count board-str)) 
+                 x (range (count (board-str 0)))]
+      (let [sq (get-in board-str [y x])]
+         (swap! board assoc [x y] 
+           (cond
+             (= sq \ ) {}
+             (= sq \p) {:open nil :pellet nil}
+             (= sq \o) {:open nil}
+             (= sq \e) {:open nil :energy nil}
+             :else nil)))))
+    @board))
     
-
+(def board (read-board))
 
 
 
@@ -369,27 +369,27 @@
 (defn tile-center? [x y]
   (and (= 4 (mod x 8)) (= 4 (mod y 8))))
 
-(defn get-new-face [x y kp old-face]
+(defn get-new-face [x y kp old-face board]
   (let [[tx ty] (tile-at x y)]
     (if (tile-center? x y)
       (cond
-        (and (= :north kp) (contains? (@board [tx (- ty 1)]) :open)) (do (use-key) kp)
-        (and (= :south kp) (contains? (@board [tx (+ ty 1)]) :open)) (do (use-key) kp)
-        (and (= :east  kp) (contains? (@board [(+ tx 1) ty]) :open)) (do (use-key) kp)
-        (and (= :west  kp) (contains? (@board [(- tx 1) ty]) :open)) (do (use-key) kp)
-        (and (= :north old-face) (contains? (@board [tx (- ty 1)]) :open)) old-face
-        (and (= :south old-face) (contains? (@board [tx (+ ty 1)]) :open)) old-face
-        (and (= :east  old-face) (contains? (@board [(+ tx 1) ty]) :open)) old-face
-        (and (= :west  old-face) (contains? (@board [(- tx 1) ty]) :open)) old-face
+        (and (= :north kp) (contains? (board [tx (- ty 1)]) :open)) (do (use-key) kp)
+        (and (= :south kp) (contains? (board [tx (+ ty 1)]) :open)) (do (use-key) kp)
+        (and (= :east  kp) (contains? (board [(+ tx 1) ty]) :open)) (do (use-key) kp)
+        (and (= :west  kp) (contains? (board [(- tx 1) ty]) :open)) (do (use-key) kp)
+        (and (= :north old-face) (contains? (board [tx (- ty 1)]) :open)) old-face
+        (and (= :south old-face) (contains? (board [tx (+ ty 1)]) :open)) old-face
+        (and (= :east  old-face) (contains? (board [(+ tx 1) ty]) :open)) old-face
+        (and (= :west  old-face) (contains? (board [(- tx 1) ty]) :open)) old-face
         :else :none)
       old-face)))
 
 (defn update-pacman [old]
   (let [[x y] (old :pos)
         [tx ty] (tile-at x y)
-        new-face (get-new-face x y @keypress (old :face))
+        new-face (get-new-face x y @keypress (old :face) board)
         [dx dy] (deltas new-face)
-        new-pos [(+ x dx) (+ y dy)]]
+        new-pos [(mod (+ 224 x dx) 224) (+ y dy)]]
     (debug (pr-str [tx ty]))
     (.setCenter (old :element) (first new-pos) (second new-pos))
     (assoc old 
@@ -408,7 +408,7 @@
     (black-background field)
     (draw-maze field)
 
-    (draw-board field @board)
+    (draw-board field board)
 
     (let [pacman (draw-pacman field pacman-start)]
       (.render field (dom/getElement "playfield"))
