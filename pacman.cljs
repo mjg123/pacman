@@ -19,6 +19,13 @@
     (doall (map #(aset out (name (first %)) (second %)) cljmap))
     out))
 
+(defn log [msg]
+  (let [val (.innerHTML (dom/getElement "log"))]
+    (set! (.innerHTML (dom/getElement "log")) (str msg "<br/>" val))))
+
+(defn debug [msg]
+  (set! (.innerHTML (dom/getElement "debug")) msg))
+
 ;;;;;;;;;;;;;;;;;;;;;
 
 (def board-str [
@@ -64,19 +71,19 @@
   ([n] (range n '()))
   ([n l] (if (= 0 n) l (recur (dec n) (conj l (- n 1))))))
 
+(def board (atom {}))
+
 (defn read-board []
-  (let [board (atom {})]
-    (doall (for [y (range (count board-str)) 
-          x (range (count (board-str 0)))]
-      (let [sq (get-in board-str [y x])]
-        (swap! board assoc [x y] 
-          (cond
-            (= sq \ ) {}
-            (= sq \p) {:open nil :pellet nil}
-            (= sq \o) {:open nil}
-            (= sq \e) {:open nil :energy nil}
-            :else nil)))))
-    @board))
+  (doall (for [y (range (count board-str)) 
+        x (range (count (board-str 0)))]
+    (let [sq (get-in board-str [y x])]
+       (swap! board assoc [x y] 
+         (cond
+           (= sq \ ) {}
+           (= sq \p) {:open nil :pellet nil}
+           (= sq \o) {:open nil}
+           (= sq \e) {:open nil :energy nil}
+           :else nil))))))
     
 
 
@@ -100,7 +107,7 @@
 (defn offset [off pos]
  (map #(+ %1 %2) off pos))
 
-(let [l 0, m 3, r 7, t l, b r]
+(let [l 0, m 4, r 7, t l, b r]
   (defn middle        [tile] (offset [m m] (pixel-pos tile)))
   (defn top-left      [tile] (offset [t l] (pixel-pos tile)))
   (defn bottom [tile] (offset [m b] (pixel-pos tile)))
@@ -345,36 +352,63 @@
 
 (defn draw-pacman [field pman]
   (let [[x y] (pman :pos)
-        elem (.drawCircle field x y 7 nil pacman-fill)]
+        elem (.drawCircle field x y 6 nil pacman-fill)]
     (assoc pman :element elem)))
 
-(def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1]})
+(def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
 (def pacman-start {:pos (left (tile 14 26)) :face :west})
 
 (def keypress (atom nil))
 
+(defn tile-at [x y]
+  (tile (Math/floor (/ x 8)) (Math/floor (/ y 8))))
+
+(defn use-key []
+  (reset! keypress nil))
+
+(defn tile-center? [x y]
+  (and (= 4 (mod x 8)) (= 4 (mod y 8))))
+
+(defn get-new-face [x y kp old-face]
+  (let [[tx ty] (tile-at x y)]
+    (if (tile-center? x y)
+      (cond
+        (and (= :north kp) (contains? (@board [tx (- ty 1)]) :open)) (do (use-key) kp)
+        (and (= :south kp) (contains? (@board [tx (+ ty 1)]) :open)) (do (use-key) kp)
+        (and (= :east  kp) (contains? (@board [(+ tx 1) ty]) :open)) (do (use-key) kp)
+        (and (= :west  kp) (contains? (@board [(- tx 1) ty]) :open)) (do (use-key) kp)
+        (and (= :north old-face) (contains? (@board [tx (- ty 1)]) :open)) old-face
+        (and (= :south old-face) (contains? (@board [tx (+ ty 1)]) :open)) old-face
+        (and (= :east  old-face) (contains? (@board [(+ tx 1) ty]) :open)) old-face
+        (and (= :west  old-face) (contains? (@board [(- tx 1) ty]) :open)) old-face
+        :else :none)
+      old-face)))
+
 (defn update-pacman [old]
-  (let [new-face (if (nil? @keypress) (old :face) @keypress)
-        [x y] (old :pos)
+  (let [[x y] (old :pos)
+        [tx ty] (tile-at x y)
+        new-face (get-new-face x y @keypress (old :face))
         [dx dy] (deltas new-face)
         new-pos [(+ x dx) (+ y dy)]]
+    (debug (pr-str [tx ty]))
     (.setCenter (old :element) (first new-pos) (second new-pos))
-    {:face new-face
-     :pos new-pos
-     :element (old :element)}))
+    (assoc old 
+      :face new-face
+      :pos new-pos)))
 
 (defn gameloop [state]
   (let [n-pacman (update-pacman (state :pacman))]
-    (timer/callOnce #(gameloop {:pacman n-pacman}) 100)))
+    (timer/callOnce #(gameloop {:pacman n-pacman}) 17)))
 
 (defn create-playfield []
-  (let [field (gfx/createGraphics 224 288)
-        board (read-board)]
+  (let [field (gfx/createGraphics 224 288)]
+
+    (read-board)
 
     (black-background field)
     (draw-maze field)
 
-    (draw-board field board)
+    (draw-board field @board)
 
     (let [pacman (draw-pacman field pacman-start)]
       (.render field (dom/getElement "playfield"))
