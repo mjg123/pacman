@@ -1,6 +1,10 @@
 (ns pacman
   (:require [goog.graphics :as gfx]
-            [goog.dom :as dom]))
+            [goog.dom :as dom]
+            [goog.events :as events]
+            [goog.events.KeyCodes :as key-codes]
+            [goog.events.KeyHandler :as key-handler]
+            [goog.Timer :as timer]))
 
 ;;;;;;;;;;;;;;;;;;;;
 
@@ -8,7 +12,7 @@
   (let [data-as-json ((js* "JSON.stringify") msg nil 4)]
     ((js* "alert") data-as-json)))
 
-(defn make-js-map
+(defn clj->js
   "makes a javascript map from a clojure one"
   [cljmap]
   (let [out (js-obj)]
@@ -16,11 +20,6 @@
     out))
 
 ;;;;;;;;;;;;;;;;;;;;;
-
-
-
-
-(def pacman-start {:pos [111 211] :face :west})
 
 (def board-str [
 "                            "
@@ -344,8 +343,29 @@
          (contains? pt :energy) (draw-energy field (tile x y))))
     board)))
 
-(defn draw-pacman [field data]
-  (.drawCircle field (first (data :pos)) (second (data :pos)) 7 nil pacman-fill))
+(defn draw-pacman [field pman]
+  (let [[x y] (pman :pos)
+        elem (.drawCircle field x y 7 nil pacman-fill)]
+    (assoc pman :element elem)))
+
+(def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1]})
+(def pacman-start {:pos (left (tile 14 26)) :face :west})
+
+(def keypress (atom nil))
+
+(defn update-pacman [old]
+  (let [new-face (if (nil? @keypress) (old :face) @keypress)
+        [x y] (old :pos)
+        [dx dy] (deltas new-face)
+        new-pos [(+ x dx) (+ y dy)]]
+    (.setCenter (old :element) (first new-pos) (second new-pos))
+    {:face new-face
+     :pos new-pos
+     :element (old :element)}))
+
+(defn gameloop [state]
+  (let [n-pacman (update-pacman (state :pacman))]
+    (timer/callOnce #(gameloop {:pacman n-pacman}) 100)))
 
 (defn create-playfield []
   (let [field (gfx/createGraphics 224 288)
@@ -356,11 +376,22 @@
 
     (draw-board field board)
 
-    (draw-pacman field pacman-start)
-
-    (.render field (dom/getElement "playfield"))))
-
+    (let [pacman (draw-pacman field pacman-start)]
+      (.render field (dom/getElement "playfield"))
+      (gameloop {:pacman pacman}))))
 
 
 (create-playfield)
+
+(defn handle-key [key]
+  (let [code (.keyCode key)]
+    (cond
+      (= code key-codes/UP) (reset! keypress :north)
+      (= code key-codes/DOWN) (reset! keypress :south)
+      (= code key-codes/LEFT) (reset! keypress :west)
+      (= code key-codes/RIGHT) (reset! keypress :east))))
+
+(events/listen (events/KeyHandler. (js* "document"))
+               "key"
+               handle-key)
 
