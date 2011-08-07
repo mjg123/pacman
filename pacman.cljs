@@ -163,6 +163,7 @@
 
 
 (defn draw-maze [field]
+  (let [maze-stroke (gfx/Stroke. 1 maze-color)]
   (let [path (gfx/Path.)]
     (-> path
       (moveTo (top-left (tile 0 16)))
@@ -179,7 +180,7 @@
       (lineTo (bottom-right (tile 22 12)))
       (lineTo (top-right (tile 22 16)))
       (lineTo (top-right (tile 27 16))))
-    (.drawPath field path (gfx/Stroke. 1 maze-color)))
+    (.drawPath field path maze-stroke))
   (let [path (gfx/Path.)]
     (-> path
       (moveTo (left (tile 0 16)))
@@ -207,18 +208,18 @@
       (lineTo (top (tile 22 16)))
       (larcTo (right (tile 22 16)))
       (lineTo (right (tile 27 16))))
-    (.drawPath field path (gfx/Stroke. 1 maze-color)))
+    (.drawPath field path maze-stroke))
 
-    (.drawPath field (island 2 5 5 7) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 7 5 11 7) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 16 5 20 7) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 22 5 25 7) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 2 9 5 10) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 22 9 25 10) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 7 18 8 22) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 19 18 20 22) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 7 24 11 25) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (island 16 24 20 25) (gfx/Stroke. 1 maze-color))
+    (.drawPath field (island 2 5 5 7) maze-stroke)
+    (.drawPath field (island 7 5 11 7) maze-stroke)
+    (.drawPath field (island 16 5 20 7) maze-stroke)
+    (.drawPath field (island 22 5 25 7) maze-stroke)
+    (.drawPath field (island 2 9 5 10) maze-stroke)
+    (.drawPath field (island 22 9 25 10) maze-stroke)
+    (.drawPath field (island 7 18 8 22) maze-stroke)
+    (.drawPath field (island 19 18 20 22) maze-stroke)
+    (.drawPath field (island 7 24 11 25) maze-stroke)
+    (.drawPath field (island 16 24 20 25) maze-stroke)
 
     (let [path (gfx/Path.)]
       (-> path
@@ -227,7 +228,7 @@
         (lineTo (middle (tile 17 19)))
         (lineTo (middle (tile 10 19)))
         (lineTo (middle (tile 10 15))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
     (let [path (gfx/Path.)]
       (-> path
@@ -236,11 +237,11 @@
         (lineTo (top-left (tile 17 19)))
         (lineTo (top-right (tile 10 19)))
         (lineTo (bottom-right (tile 10 15))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
-    (.drawPath field (t-shape 10 9) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (t-shape 10 21) (gfx/Stroke. 1 maze-color))
-    (.drawPath field (t-shape 10 27) (gfx/Stroke. 1 maze-color))
+    (.drawPath field (t-shape 10 9) maze-stroke)
+    (.drawPath field (t-shape 10 21) maze-stroke)
+    (.drawPath field (t-shape 10 27) maze-stroke)
 
     (let [path (gfx/Path.)]
       (-> path
@@ -261,7 +262,7 @@
         (lineTo (right (tile 7 16)))
         (arcTo (top (tile 7 16)))
         (lineTo (bottom (tile 7 9))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
     (let [path (gfx/Path.)]
       (-> path
@@ -282,7 +283,7 @@
         (lineTo (left (tile 19 12)))
         (larcTo (top (tile 19 12)))
         (lineTo (bottom (tile 19 9))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
     (let [path (gfx/Path.)]
       (-> path
@@ -299,7 +300,7 @@
         (lineTo (right (tile 2 25)))
         (arcTo (top (tile 2 25)))
         (lineTo (bottom (tile 2 24))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
     (let [path (gfx/Path.)]
       (-> path
@@ -316,10 +317,10 @@
         (lineTo (right (tile 22 28)))
         (arcTo (top (tile 22 28)))
         (lineTo (bottom (tile 22 24))))
-      (.drawPath field path (gfx/Stroke. 1 maze-color)))
+      (.drawPath field path maze-stroke))
 
 
-)
+))
    
  
 (defn draw-pellet [field tile]
@@ -328,12 +329,19 @@
         [x y] (middle tile)]
     (.drawCircle field x y 1 pellet-stroke pellet-fill)))
 
+(defn draw-energy [field tile]
+  (let [pellet-stroke (gfx/Stroke. 1 pellet-color)
+        pellet-fill   (gfx/SolidFill. pellet-color)
+        [x y] (middle tile)]
+    (.drawCircle field x y 3 pellet-stroke pellet-fill)))
+
 (defn draw-board [field board]
   (doall (map 
     #(let [[x y] (first %)
            pt    (second %)]
        (cond
-         (contains? pt :pellet) (draw-pellet field (tile x y))))
+         (contains? pt :pellet) (draw-pellet field (tile x y))
+         (contains? pt :energy) (draw-energy field (tile x y))))
     board)))
 
 (defn draw-pacman [field data]
@@ -345,8 +353,6 @@
 
     (black-background field)
     (draw-maze field)
-;    (draw-pellets field pellet-pos)
-;    (draw-energy field energy-pos)
 
     (draw-board field board)
 
