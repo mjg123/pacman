@@ -2,6 +2,7 @@ Pac-Man in-browser using clojurescript
 
 todo
  - direction marker on pacman
+ - animated pacman
  - score
  - ghosts
  - cornering
