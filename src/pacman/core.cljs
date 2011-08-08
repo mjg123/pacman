@@ -1,12 +1,11 @@
-(ns pacman
+(ns pacman.core
   (:require [goog.graphics :as gfx]
             [goog.dom :as dom]
-            [goog.events :as events]
-            [goog.events.KeyCodes :as key-codes]
-            [goog.events.KeyHandler :as key-handler]
+            [pacman.pacui :as ui]
             [goog.Timer :as timer]))
 
 ;;;;;;;;;;;;;;;;;;;;
+
 
 (defn show [msg]
   (let [data-as-json ((js* "JSON.stringify") msg nil 4)]
@@ -118,9 +117,6 @@
   (defn right  [tile] (offset [r m] (pixel-pos tile)))
   (defn left   [tile] (offset [l m] (pixel-pos tile)))
 )
-
-(defn black-background [field]
-  (.drawRect field 0 0 (.width field) (.height field) nil (gfx/SolidFill. "#000")))
 
 (defn moveTo [path coords]
   (.moveTo path (first coords) (second coords)))
@@ -357,7 +353,6 @@
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
 (def pacman-start {:pos (left (tile 14 26)) :face :west})
 
-(def keypress (atom nil))
 
 (defn tile-at [x y]
   (tile (Math/floor (/ x 8)) (Math/floor (/ y 8))))
@@ -404,7 +399,6 @@
 
     (read-board)
 
-    (black-background field)
     (draw-maze field)
 
     (draw-board field board)
@@ -414,17 +408,7 @@
       (gameloop {:pacman pacman}))))
 
 
-(create-playfield)
+(do
+  (ui/initialize))
 
-(defn handle-key [key]
-  (let [code (.keyCode key)]
-    (cond
-      (= code key-codes/UP) (reset! keypress :north)
-      (= code key-codes/DOWN) (reset! keypress :south)
-      (= code key-codes/LEFT) (reset! keypress :west)
-      (= code key-codes/RIGHT) (reset! keypress :east))))
-
-(events/listen (events/KeyHandler. (js* "document"))
-               "key"
-               handle-key)
 
