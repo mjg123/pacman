@@ -11,16 +11,27 @@
 
 (defn get-new-face [x y kp old-face board]
   (let [[tx ty] (_tile/tile-at x y)]
-    (if (_tile/tile-center? x y)
+    (if (_tile/tile-center? x y) ; TODO - allow fast cornering
       (cond
+        ;; Reverse direction
+        (and (= :west kp) (= :east old-face)) :west
+        (and (= :east kp) (= :west old-face)) :east
+        (and (= :north kp) (= :south old-face)) :north
+        (and (= :south kp) (= :north old-face)) :south
+
+        ;; Change direction
+        ;; TODO - make a memoized function (is-open? x y)
         (and (= :north kp) (contains? (board [tx (- ty 1)]) :open)) (do (keyz/consume!) kp)
         (and (= :south kp) (contains? (board [tx (+ ty 1)]) :open)) (do (keyz/consume!) kp)
         (and (= :east kp) (contains? (board [(+ tx 1) ty]) :open)) (do (keyz/consume!) kp)
         (and (= :west kp) (contains? (board [(- tx 1) ty]) :open)) (do (keyz/consume!) kp)
+
+        ;; Keep going (if we can)
         (and (= :north old-face) (contains? (board [tx (- ty 1)]) :open)) old-face
         (and (= :south old-face) (contains? (board [tx (+ ty 1)]) :open)) old-face
         (and (= :east old-face) (contains? (board [(+ tx 1) ty]) :open)) old-face
         (and (= :west old-face) (contains? (board [(- tx 1) ty]) :open)) old-face
+
         :else :none)
       old-face)))
 
@@ -37,7 +48,7 @@
 
     (if (new-tile? x y nx ny)
       (do
-        (ui/eat-at! (_tile/tile-at nx ny))))
+        (ui/eat-at! (_tile/tile-at nx ny)))) ; TODO - call tile-at less
 
     (assoc old
       :face new-face
