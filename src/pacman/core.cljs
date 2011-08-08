@@ -13,10 +13,10 @@
   (let [[tx ty] (_tile/tile-at x y)]
     (if (_tile/tile-center? x y)
       (cond
-        (and (= :north kp) (contains? (board [tx (- ty 1)]) :open)) (do (keys/consume!) kp)
-        (and (= :south kp) (contains? (board [tx (+ ty 1)]) :open)) (do (keys/consume!) kp)
-        (and (= :east kp) (contains? (board [(+ tx 1) ty]) :open)) (do (keys/consume!) kp)
-        (and (= :west kp) (contains? (board [(- tx 1) ty]) :open)) (do (keys/consume!) kp)
+        (and (= :north kp) (contains? (board [tx (- ty 1)]) :open)) (do (keyz/consume!) kp)
+        (and (= :south kp) (contains? (board [tx (+ ty 1)]) :open)) (do (keyz/consume!) kp)
+        (and (= :east kp) (contains? (board [(+ tx 1) ty]) :open)) (do (keyz/consume!) kp)
+        (and (= :west kp) (contains? (board [(- tx 1) ty]) :open)) (do (keyz/consume!) kp)
         (and (= :north old-face) (contains? (board [tx (- ty 1)]) :open)) old-face
         (and (= :south old-face) (contains? (board [tx (+ ty 1)]) :open)) old-face
         (and (= :east old-face) (contains? (board [(+ tx 1) ty]) :open)) old-face
@@ -25,13 +25,12 @@
       old-face)))
 
 (defn update-pacman [old kp board]
-  (util/log (str kp (pr-str old)))
   (let [[x y] (old :pos)
-        [tx ty] (_tile/tile-at x y)
+        ;[tx ty] (_tile/tile-at x y)
         new-face (get-new-face x y kp (old :face) board)
         [dx dy] (deltas new-face)
         new-pos [(mod (+ 224 x dx) 224) (+ y dy)]]
-    (util/debug (pr-str [tx ty]))
+    ;(util/debug (pr-str [tx ty]))
     (ui/put-pacman! new-pos new-face)
     (assoc old
       :face new-face
@@ -44,7 +43,7 @@
     :pacman (update-pacman (state :pacman) kp (state :board))))
 
 (defn gameloop [state]
-  (timer/callOnce #(gameloop (next-state state) (keyz/kp)) 17)) ;; NB we're getting the mutable keypress state here!
+  (timer/callOnce #(gameloop (next-state state (keyz/kp))) 17)) ;; NB we're getting the mutable keypress state here!
 
 (let [board (board/load)]
   (util/log "starting up")
