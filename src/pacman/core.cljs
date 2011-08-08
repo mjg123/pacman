@@ -24,17 +24,24 @@
         :else :none)
       old-face)))
 
+(defn new-tile? [ox oy nx ny]
+  (not= (_tile/tile-at ox oy) (_tile/tile-at nx ny)))
+
 (defn update-pacman [old kp board]
   (let [[x y] (old :pos)
-        ;[tx ty] (_tile/tile-at x y)
         new-face (get-new-face x y kp (old :face) board)
         [dx dy] (deltas new-face)
-        new-pos [(mod (+ 224 x dx) 224) (+ y dy)]]
-    ;(util/debug (pr-str [tx ty]))
-    (ui/put-pacman! new-pos new-face)
+        [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]]
+
+    (ui/put-pacman! [nx ny] new-face)
+
+    (if (new-tile? x y nx ny)
+      (do
+        (ui/eat-at! (_tile/tile-at nx ny))))
+
     (assoc old
       :face new-face
-      :pos new-pos)))
+      :pos [nx ny])))
 
 
 (defn next-state [state kp]

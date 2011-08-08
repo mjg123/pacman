@@ -16,19 +16,19 @@
 (def left _tile/left)
 
 
-(defn moveTo [path coords] ; TODO - destructure this!
-  (.moveTo path (first coords) (second coords)))
+(defn moveTo [path [x y]]
+  (.moveTo path x y))
 
-(defn lineTo [path coords]
-  (.lineTo path (first coords) (second coords)))
+(defn lineTo [path [x y]]
+  (.lineTo path x y))
 
-(defn arcTo [path coords]
-  (let [cur (.currentPoint_ path)]
-    (.arcTo path (- (first coords) (first cur)) (- (second coords) (second cur)) -90 90)))
+(defn arcTo [path [x y]]
+  (let [[cx cy] (.currentPoint_ path)]
+    (.arcTo path (- x cx) (- y cy) -90 90)))
 
-(defn larcTo [path coords]
-  (let [cur (.currentPoint_ path)]
-    (.arcTo path (- (first coords) (first cur)) (- (second coords) (second cur)) 180 -90)))
+(defn larcTo [path [x y]]
+  (let [[cx cy] (.currentPoint_ path)]
+    (.arcTo path (- x cx) (- y cy) 180 -90)))
 
 (defn island [x y r b]
   (let [path (gfx/Path.)]
