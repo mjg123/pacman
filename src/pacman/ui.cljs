@@ -9,6 +9,7 @@
 (def pellet-fill (gfx/SolidFill. "#FFB9AF"))
 (def eaten-fill (gfx/SolidFill. "#000"))
 (def pacman-fill (gfx/SolidFill. "#FF0"))
+(def ghost-colors {:blinky "#F00"})
 
 (defn black-background [field]
   (.drawRect field 0 0 (.width field) (.height field) nil (gfx/SolidFill. "#000")))
@@ -41,16 +42,25 @@
     (.lineTo path 0 0)
     (.lineTo path -4 -4)
 
-    ;(.setFill path pacman-fill)
-    (def pacman-elem (.drawPath field path (gfx/Stroke. 1 "#FF0")))))
+    (let [elem (.drawPath field path (gfx/Stroke. 1 "#FF0"))]
+      ;(.setFill elem pacman-fill) ; TODO - wakawaka
+      (def pacman-elem elem))))
 
 (def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
 
 (defn put-pacman! [[x y] face]
-  ; TODO - set his face!
   (.setTransformation pacman-elem x y (faces face) 0 0))
 
-(defn initialize [board pman]
+(defn put-ghost! [ghost [x y] face]
+  (.setCenter (ghost-elems ghost) x y))
+
+(defn create-ghost-elem [field [x y] color]
+  (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color)))
+
+(defn create-ghosts [field ghosts]
+  (def ghost-elems {:blinky (create-ghost-elem field ((ghosts :blinky) :pos) (ghost-colors :blinky))}))
+
+(defn initialize [board pman ghosts]
   (let [field (gfx/createGraphics 224 288)]
 
     (black-background field)
@@ -61,6 +71,7 @@
       (draw-edibles field board :energy draw-energy edibles)
       (def edible-elems @edibles))
 
+    (create-ghosts field ghosts)
     (create-pacman-elem field pman)
 
     (.render field (dom/getElement "playfield"))))
