@@ -9,7 +9,10 @@
 (def pellet-fill (gfx/SolidFill. "#FFB9AF"))
 (def eaten-fill (gfx/SolidFill. "#000"))
 (def pacman-fill (gfx/SolidFill. "#FF0"))
-(def ghost-colors {:blinky "#F00"})
+(def ghost-colors {:blinky "#F00"
+                   :pinky "#ffb8ff"
+                   :inky "#0FF"
+                   :clyde "#ffb851"})
 
 (defn black-background [field]
   (.drawRect field 0 0 (.width field) (.height field) nil (gfx/SolidFill. "#000")))
@@ -58,7 +61,12 @@
   (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color)))
 
 (defn create-ghosts [field ghosts]
-  (def ghost-elems {:blinky (create-ghost-elem field ((ghosts :blinky) :pos) (ghost-colors :blinky))}))
+  (def ghost-elems {
+    :blinky (create-ghost-elem field ((ghosts :blinky) :pos) (ghost-colors :blinky))
+    :pinky (create-ghost-elem field ((ghosts :pinky) :pos) (ghost-colors :pinky))
+    :inky (create-ghost-elem field ((ghosts :inky) :pos) (ghost-colors :inky))
+    :clyde (create-ghost-elem field ((ghosts :clyde) :pos) (ghost-colors :clyde))
+    }))
 
 (defn initialize [board pman ghosts]
   (let [field (gfx/createGraphics 224 288)]

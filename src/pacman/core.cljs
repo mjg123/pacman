@@ -10,6 +10,9 @@
 (def start-tiles {
   :pacman (_tile/tile 14 26)
   :blinky (_tile/tile 14 14)
+  :pinky (_tile/tile 12 14)
+  :inky (_tile/tile 13 14)
+  :clyde (_tile/tile 15 14)
   })
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
@@ -23,8 +26,26 @@
                       :tile (start-tiles :blinky)
                       :target-tile (_tile/tile 27 0)
                       :home (_tile/tile 27 0)
-                      :face :west ; TODO - choose starting face better
-                      :next-turn :none}})
+                      :face :west ; TODO - choose starting face better?
+                      :next-turn :none}
+             :pinky {:pos (_tile/left (start-tiles :pinky))
+                     :tile (start-tiles :pinky)
+                     :target-tile (_tile/tile 0 0)
+                     :home (_tile/tile 0 0)
+                     :face :west ; TODO - choose starting face better?
+                     :next-turn :none}
+             :inky {:pos (_tile/left (start-tiles :inky))
+                    :tile (start-tiles :inky)
+                    :target-tile (_tile/tile 27 34)
+                    :home (_tile/tile 27 34)
+                    :face :west ; TODO - choose starting face better?
+                    :next-turn :none}
+             :clyde {:pos (_tile/left (start-tiles :clyde))
+                     :tile (start-tiles :clyde)
+                     :target-tile (_tile/tile 0 34)
+                     :home (_tile/tile 0 34)
+                     :face :west ; TODO - choose starting face better?
+                     :next-turn :none}})
 
 (def opposite-dir {:east :west
                    :west :east
@@ -86,7 +107,7 @@
   (let [[x y] (ghost :pos)
         new-face (ghost-turn ghost)
         [dx dy] (deltas new-face)
-        [nx ny] [(+ x dx) (+ y dy)]
+        [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
     (ui/put-ghost! name [nx ny] nil)
@@ -106,32 +127,46 @@
 
 (defn update-ghosts [old]
   (assoc old
-    :blinky (update-ghost :blinky (old :blinky))))
+    :blinky (update-ghost :blinky (old :blinky))
+    :pinky (update-ghost :pinky (old :pinky))
+    :inky (update-ghost :inky (old :inky))
+    :clyde (update-ghost :clyde (old :clyde))))
 
 (defn is-scatter? [tick]
-  (even? (Math/floor (/ tick 1000))))
+  (even? (Math/floor (/ tick 500))))
 
 (defn update-ghost-targets [g p t]
   (let [scatter (is-scatter? t)]
     (util/log (pr-str [t "is-scatter?" scatter]))
     (if scatter
-      (assoc-in g [:blinky :target-tile] (get-in g [:blinky :home]))
-      (assoc-in g [:blinky :target-tile] (p :tile)))))
+      (do
+        (-> g
+          (assoc-in [:blinky :target-tile] (get-in g [:blinky :home]))
+          (assoc-in [:pinky :target-tile] (get-in g [:pinky :home]))
+          (assoc-in [:inky :target-tile] (get-in g [:inky :home]))
+          (assoc-in [:clyde :target-tile] (get-in g [:clyde :home]))))
 
-(defn next-state [state kp]
-  (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
-    (assoc state
-      :tick (inc (state :tick))
-      :ghosts (update-ghosts targetted-ghosts)
-      :pacman (update-pacman (state :pacman) kp (state :board)))))
+        (do
+          (-> g
+            (assoc-in [:blinky :target-tile] (p :tile))
+            (assoc-in [:pinky :target-tile] (p :tile))
+            (assoc-in [:inky :target-tile] (p :tile))
+            (assoc-in [:clyde :target-tile] (p :tile)))))))
 
-(defn gameloop [state]
-  (timer/callOnce #(gameloop (next-state state (keyz/kp))) 17)) ;; NB we're getting the mutable keypress state here!
+  (defn next-state [state kp]
+    (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
+      (assoc state
+        :tick (inc (state :tick))
+        :ghosts (update-ghosts targetted-ghosts)
+        :pacman (update-pacman (state :pacman) kp (state :board)))))
 
-(let [board (board/load)]
-  (util/log "starting up")
-  (ui/initialize board pacman-start ghosts)
-  (keyz/listen)
-  (gameloop {:pacman pacman-start :ghosts ghosts :board board :tick 0}))
+  (defn gameloop [state]
+    (timer/callOnce #(gameloop (next-state state (keyz/kp))) 17)) ;; NB we're getting the mutable keypress state here!
+
+  (let [board (board/load)]
+    (util/log "starting up")
+    (ui/initialize board pacman-start ghosts)
+    (keyz/listen)
+    (gameloop {:pacman pacman-start :ghosts ghosts :board board :tick 0}))
 
 
