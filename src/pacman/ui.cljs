@@ -27,19 +27,28 @@
       #(swap! edibles assoc % (draw-fn field %))
       locations))))
 
-(defn create-pacman-elem [field pman]
-  (let [[x y] (pman :pos)
-        elem (.drawCircle field x y 6 nil pacman-fill)]
-    (def pacman-elem elem)))
-
 (defn eat-at! [loc]
   (let [edible (edible-elems loc)]
     (if (not (nil? edible))
       (.setFill edible eaten-fill))))
 
+(defn create-pacman-elem [field pman]
+  (let [[x y] (pman :pos)
+        path (gfx/Path.)]
+    (.moveTo path 4 -4)
+    (.arcToAsCurves path 5.6 5.6 -45 270)
+    (.moveTo path 4 -4)
+    (.lineTo path 0 0)
+    (.lineTo path -4 -4)
+
+    ;(.setFill path pacman-fill)
+    (def pacman-elem (.drawPath field path (gfx/Stroke. 1 "#FF0")))))
+
+(def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
+
 (defn put-pacman! [[x y] face]
   ; TODO - set his face!
-  (.setCenter pacman-elem x y))
+  (.setTransformation pacman-elem x y (faces face) 0 0))
 
 (defn initialize [board pman]
   (let [field (gfx/createGraphics 224 288)]

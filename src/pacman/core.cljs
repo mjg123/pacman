@@ -7,52 +7,58 @@
     [goog.Timer :as timer]))
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
-(def pacman-start {:pos (_tile/left (_tile/tile 14 26)) :face :west})
+(def pacman-start {:pos (_tile/left (_tile/tile 14 26))
+                   :tile (_tile/tile 14 26) 
+                   :face :west
+                   :move-dir :west})
 
-(defn get-new-face [x y kp old-face board]
+(defn tile-open? [board [x y]] ;TODO memoize
+  (contains? (board [x y]) :open))
+
+(defn get-new-move-dir [x y kp old-dir board]
   (let [[tx ty] (_tile/tile-at x y)]
     (if (_tile/tile-center? x y) ; TODO - allow fast cornering
       (cond
         ;; Reverse direction
-        (and (= :west kp) (= :east old-face)) :west
-        (and (= :east kp) (= :west old-face)) :east
-        (and (= :north kp) (= :south old-face)) :north
-        (and (= :south kp) (= :north old-face)) :south
+        (and (= :west kp) (= :east old-dir)) :west
+        (and (= :east kp) (= :west old-dir)) :east
+        (and (= :north kp) (= :south old-dir)) :north
+        (and (= :south kp) (= :north old-dir)) :south
 
         ;; Change direction
-        ;; TODO - make a memoized function (is-open? x y)
-        (and (= :north kp) (contains? (board [tx (- ty 1)]) :open)) (do (keyz/consume!) kp)
-        (and (= :south kp) (contains? (board [tx (+ ty 1)]) :open)) (do (keyz/consume!) kp)
-        (and (= :east kp) (contains? (board [(+ tx 1) ty]) :open)) (do (keyz/consume!) kp)
-        (and (= :west kp) (contains? (board [(- tx 1) ty]) :open)) (do (keyz/consume!) kp)
+        (and (= :north kp) (tile-open? board [tx (- ty 1)])) (do (keyz/consume!) kp)
+        (and (= :south kp) (tile-open? board [tx (+ ty 1)])) (do (keyz/consume!) kp)
+        (and (= :east kp) (tile-open? board [(+ tx 1) ty])) (do (keyz/consume!) kp)
+        (and (= :west kp) (tile-open? board [(- tx 1) ty])) (do (keyz/consume!) kp)
 
         ;; Keep going (if we can)
-        (and (= :north old-face) (contains? (board [tx (- ty 1)]) :open)) old-face
-        (and (= :south old-face) (contains? (board [tx (+ ty 1)]) :open)) old-face
-        (and (= :east old-face) (contains? (board [(+ tx 1) ty]) :open)) old-face
-        (and (= :west old-face) (contains? (board [(- tx 1) ty]) :open)) old-face
+        (and (= :north old-dir) (tile-open? board [tx (- ty 1)])) old-dir
+        (and (= :south old-dir) (tile-open? board [tx (+ ty 1)])) old-dir
+        (and (= :east old-dir) (tile-open? board [(+ tx 1) ty])) old-dir
+        (and (= :west old-dir) (tile-open? board [(- tx 1) ty])) old-dir
 
         :else :none)
-      old-face)))
-
-(defn new-tile? [ox oy nx ny]
-  (not= (_tile/tile-at ox oy) (_tile/tile-at nx ny)))
+      old-dir)))
 
 (defn update-pacman [old kp board]
   (let [[x y] (old :pos)
-        new-face (get-new-face x y kp (old :face) board)
-        [dx dy] (deltas new-face)
-        [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]]
+        new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
+        new-face (if (= :none new-move-dir) (old :face) new-move-dir)
+        [dx dy] (deltas new-move-dir)
+        [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
+        new-tile (_tile/tile-at nx ny)]
 
     (ui/put-pacman! [nx ny] new-face)
 
-    (if (new-tile? x y nx ny)
+    (if (not= (old :tile) new-tile)
       (do
-        (ui/eat-at! (_tile/tile-at nx ny)))) ; TODO - call tile-at less
+        (ui/eat-at! new-tile)))
 
     (assoc old
       :face new-face
-      :pos [nx ny])))
+      :move-dir new-move-dir
+      :pos [nx ny]
+      :tile new-tile)))
 
 
 (defn next-state [state kp]
