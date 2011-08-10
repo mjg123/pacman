@@ -5,7 +5,8 @@
     [pacman.keys :as keyz]
     [pacman.ghosts :as ghosts]
     [pacman.tile :as _tile]
-    [goog.Timer :as timer]))
+    [goog.Timer :as timer]
+    [goog.date :as date]))
 
 (def start-tiles {
   :pacman (_tile/tile 14 26)
@@ -110,7 +111,7 @@
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
-    (ui/put-ghost! name [nx ny] nil (ghost :target-tile))
+    (ui/put-ghost! name [nx ny] new-face (ghost :target-tile))
 
     (let [next-turn
           (if (not= (ghost :tile) new-tile)
@@ -141,11 +142,11 @@
 
 (defn inky-target [{[px py] :tile pface :face} {[bx by] :tile}]
   ; same bug in inky's targeting while pacman is going north.
- (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface)) ;vector of pacman's travel
-       [vx vy] (map #(* 2 %) pman-vec) ; * 2
-       [sx sy] [(+ px vx) (+ py vy)] ; drawn relative to pacman
-       [bvx bvy] [(- sx bx) (- sy by)]] ; vector from blinky to [sx sy]
-   [(+ bx (* 2 bvx)) (+ by (* 2 bvy))])) ; twice that vector, starting at [bx by]
+  (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface)) ;vector of pacman's travel
+        [vx vy] (map #(* 2 %) pman-vec) ; * 2
+        [sx sy] [(+ px vx) (+ py vy)] ; drawn relative to pacman
+        [bvx bvy] [(- sx bx) (- sy by)]] ; vector from blinky to [sx sy]
+    [(+ bx (* 2 bvx)) (+ by (* 2 bvy))])) ; twice that vector, starting at [bx by]
 
 (defn clyde-target [{[px py] :tile} {[cx cy] :tile [hx hy] :home}]
   (if (> 64 (+ (* (- px cx) (- px cx)) (* (- py cy) (- py cy))))
@@ -165,27 +166,41 @@
           (assoc-in [:inky :target-tile] (get-in g [:inky :home]))
           (assoc-in [:clyde :target-tile] (get-in g [:clyde :home]))))
 
-        (do
-          (-> g
-            (assoc-in [:blinky :target-tile] (p :tile))
-            (assoc-in [:pinky :target-tile] (pinky-target p))
-            (assoc-in [:inky :target-tile] (inky-target p (g :blinky)))
-            (assoc-in [:clyde :target-tile] (clyde-target p (g :clyde))))))))
+      (do
+        (-> g
+          (assoc-in [:blinky :target-tile] (p :tile))
+          (assoc-in [:pinky :target-tile] (pinky-target p))
+          (assoc-in [:inky :target-tile] (inky-target p (g :blinky)))
+          (assoc-in [:clyde :target-tile] (clyde-target p (g :clyde))))))))
 
-  (defn next-state [state kp]
-    (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
-      (assoc state
-        :tick (inc (state :tick))
-        :ghosts (update-ghosts targetted-ghosts)
-        :pacman (update-pacman (state :pacman) kp (state :board)))))
+(defn next-state [state kp]
+  (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
+    (assoc state
+      :tick (inc (state :tick))
+      :ghosts (update-ghosts targetted-ghosts)
+      :pacman (update-pacman (state :pacman) kp (state :board)))))
 
-  (defn gameloop [state]
-    (timer/callOnce #(gameloop (next-state state (keyz/kp))) 17)) ;; NB we're getting the mutable keypress state here!
+(defn current-time []
+  (. (date/DateTime.) (getTime)))
 
-  (let [board (board/load)]
-    (util/log "starting up")
-    (ui/initialize board pacman-start ghosts)
-    (keyz/listen)
-    (gameloop {:pacman pacman-start :ghosts ghosts :board board :tick 0}))
+(defn gameloop [state loopstart]
+
+  (let [next (next-state state (keyz/kp))
+        now (current-time )
+        time-taken (- now loopstart)
+        sleep (- 33 time-taken)
+        real-sleep (if (> 0 sleep) 0 sleep)]
+
+    (if (not= sleep real-sleep)
+      (util/log "TOO SLOW")
+      (util/log ""))
+
+    (timer/callOnce #(gameloop next now) real-sleep)))
+
+(let [board (board/load)]
+  (util/log "starting up")
+  (ui/initialize board pacman-start ghosts)
+  (keyz/listen)
+  (gameloop {:pacman pacman-start :ghosts ghosts :board board :tick 0} (current-time)))
 
 

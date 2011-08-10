@@ -50,18 +50,35 @@
       (def pacman-elem elem))))
 
 (def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
+(def eye-deltas {:north [0 0] :south [0 0] :east [2 0] :west [-2 0]})
+(def pupil-deltas {:north [0 -1] :south [0 1] :east [3 0] :west [-3 0]})
 
 (defn put-pacman! [[x y] face]
   (.setTransformation pacman-elem x y (faces face) 0 0))
 
 (defn put-ghost! [ghost [x y] face target]
-  (let [[tx ty] (tile/middle target)]
+  (let [[tx ty] (tile/middle target)
+        [edx edy] (eye-deltas face)
+        [pdx pdy] (pupil-deltas face)]
     (.setCenter (get-in ghost-elems [ghost :pos]) x y)
-    (.setCenter (get-in ghost-elems [ghost :target]) tx ty)))
+    (.setPosition (get-in ghost-elems [ghost :body]) (- x 6) y)
+    (.setCenter (get-in ghost-elems [ghost :target]) tx ty)
+    (.setCenter (get-in ghost-elems [ghost :leye]) (+ x edx -2) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost :lpupil]) (+ x pdx -2) (+ y pdy))
+    (.setCenter (get-in ghost-elems [ghost :reye]) (+ x edx 2) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost :rpupil]) (+ x pdx 2) (+ y pdy))))
+
+(def eye-radius 2.5)
+(def pupil-radius 1.5)
 
 (defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
-  {:pos (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color))
-   :target (.drawEllipse field tx ty 2 2 (gfx/Stroke. 1 color) nil)})
+  {:pos (.drawEllipse field x y 6 6 nil (gfx/SolidFill. color))
+   :body (.drawRect field (- x 6) y 12 6 nil (gfx/SolidFill. color))
+   :target (.drawEllipse field tx ty 2 2 (gfx/Stroke. 1 color) nil)
+   :leye (.drawEllipse field (- x 2) y eye-radius eye-radius nil (gfx/SolidFill. "#FFF"))
+   :reye (.drawEllipse field (+ x 2) y eye-radius eye-radius nil (gfx/SolidFill. "#FFF"))
+   :lpupil (.drawEllipse field (- x 2) y pupil-radius pupil-radius nil (gfx/SolidFill. "#00F"))
+   :rpupil (.drawEllipse field (+ x 2) y pupil-radius pupil-radius nil (gfx/SolidFill. "#00F"))})
 
 (defn create-ghosts [field ghosts]
   (def ghost-elems {
