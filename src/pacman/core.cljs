@@ -117,7 +117,11 @@
           (if (not= (ghost :tile) new-tile)
             (let [exits (board/exits new-tile)
                   valid-exits (remove #(= (opposite-dir (ghost :face)) %) exits)]
-              (ghosts/choose-exit new-tile (ghost :target-tile) valid-exits))
+
+              (if (= 1 (count valid-exits))
+                (first valid-exits)
+                (ghosts/choose-exit new-tile (ghost :target-tile) valid-exits)))
+          
             (ghost :next-turn))]
 
       (assoc ghost

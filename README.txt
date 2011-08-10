@@ -3,7 +3,6 @@ Pac-Man in-browser using clojurescript
 todo
  - html config: show-ghost-targets, slow-x10, invincible
  - proper ordering for ghost choices when distances are equal (up, down, left, right)
- - ghostal eyes
  - animated pacman
  - score
  - pacman dies if eaten + lives etc
@@ -15,9 +14,12 @@ todo
  - energy -> frightened ghosts, scatter timer stops, pacman can eat them
 
 done
- - should be able to reverse direction without waiting for tile-center
- - gobbling pellets and energy
- - ghosts
- - different targetting for each ghost
- - finish the jeffing maze!
- - better-timed game loop
+ - pacman, movement, maze, key-control, etc 7/8
+ - should be able to reverse direction without waiting for tile-center 8/8
+ - gobbling pellets and energy 8/8
+ - ghosts 9/8
+ - finish the jeffing maze! 9/8
+ - different targetting for each ghost 10/8
+ - better-timed game loop 10/8
+ - ghostal eyes 10/8
+ - alternative key mappings 10/8
