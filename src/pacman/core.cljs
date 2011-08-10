@@ -24,26 +24,26 @@
 
 (def ghosts {:blinky {:pos (_tile/left (start-tiles :blinky))
                       :tile (start-tiles :blinky)
-                      :target-tile (_tile/tile 27 0)
-                      :home (_tile/tile 27 0)
+                      :target-tile (_tile/tile 25 0)
+                      :home (_tile/tile 25 0)
                       :face :west ; TODO - choose starting face better?
                       :next-turn :none}
              :pinky {:pos (_tile/left (start-tiles :pinky))
                      :tile (start-tiles :pinky)
-                     :target-tile (_tile/tile 0 0)
-                     :home (_tile/tile 0 0)
+                     :target-tile (_tile/tile 2 0)
+                     :home (_tile/tile 2 0)
                      :face :west ; TODO - choose starting face better?
                      :next-turn :none}
              :inky {:pos (_tile/left (start-tiles :inky))
                     :tile (start-tiles :inky)
-                    :target-tile (_tile/tile 27 34)
-                    :home (_tile/tile 27 34)
+                    :target-tile (_tile/tile 27 35)
+                    :home (_tile/tile 27 35)
                     :face :west ; TODO - choose starting face better?
                     :next-turn :none}
              :clyde {:pos (_tile/left (start-tiles :clyde))
                      :tile (start-tiles :clyde)
-                     :target-tile (_tile/tile 0 34)
-                     :home (_tile/tile 0 34)
+                     :target-tile (_tile/tile 0 35)
+                     :home (_tile/tile 0 35)
                      :face :west ; TODO - choose starting face better?
                      :next-turn :none}})
 
@@ -110,7 +110,7 @@
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
-    (ui/put-ghost! name [nx ny] nil)
+    (ui/put-ghost! name [nx ny] nil (ghost :target-tile))
 
     (let [next-turn
           (if (not= (ghost :tile) new-tile)

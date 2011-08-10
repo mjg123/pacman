@@ -54,18 +54,21 @@
 (defn put-pacman! [[x y] face]
   (.setTransformation pacman-elem x y (faces face) 0 0))
 
-(defn put-ghost! [ghost [x y] face]
-  (.setCenter (ghost-elems ghost) x y))
+(defn put-ghost! [ghost [x y] face target]
+  (let [[tx ty] (tile/middle target)]
+    (.setCenter (get-in ghost-elems [ghost :pos]) x y)
+    (.setCenter (get-in ghost-elems [ghost :target]) tx ty)))
 
-(defn create-ghost-elem [field [x y] color]
-  (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color)))
+(defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
+  {:pos (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color))
+   :target (.drawEllipse field tx ty 4 4 (gfx/Stroke. 1 color) nil)})
 
 (defn create-ghosts [field ghosts]
   (def ghost-elems {
-    :blinky (create-ghost-elem field ((ghosts :blinky) :pos) (ghost-colors :blinky))
-    :pinky (create-ghost-elem field ((ghosts :pinky) :pos) (ghost-colors :pinky))
-    :inky (create-ghost-elem field ((ghosts :inky) :pos) (ghost-colors :inky))
-    :clyde (create-ghost-elem field ((ghosts :clyde) :pos) (ghost-colors :clyde))
+    :blinky (create-ghost-elems field (ghosts :blinky) (ghost-colors :blinky))
+    :pinky (create-ghost-elems field (ghosts :pinky) (ghost-colors :pinky))
+    :inky (create-ghost-elems field (ghosts :inky) (ghost-colors :inky))
+    :clyde (create-ghost-elems field (ghosts :clyde) (ghost-colors :clyde))
     }))
 
 (defn initialize [board pman ghosts]
