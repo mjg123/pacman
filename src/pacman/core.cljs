@@ -157,7 +157,6 @@
 
 (defn update-ghost-targets [g p t]
   (let [scatter (is-scatter? t)]
-    (util/log (pr-str [t "is-scatter?" scatter]))
     (if scatter
       (do
         (-> g

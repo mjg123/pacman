@@ -14,10 +14,23 @@
 (defn handle-key [key]
   (let [code (.keyCode key)]
     (cond
+      ; arrow keys
       (= code key-codes/UP) (reset! keypress :north)
       (= code key-codes/DOWN) (reset! keypress :south)
       (= code key-codes/LEFT) (reset! keypress :west)
-      (= code key-codes/RIGHT) (reset! keypress :east))))
+      (= code key-codes/RIGHT) (reset! keypress :east)
+
+      ; doom keys
+      (= code key-codes/W) (reset! keypress :north)
+      (= code key-codes/S) (reset! keypress :south)
+      (= code key-codes/A) (reset! keypress :west)
+      (= code key-codes/D) (reset! keypress :east)
+
+      ; vi keys
+      (= code key-codes/J) (reset! keypress :north)
+      (= code key-codes/K) (reset! keypress :south)
+      (= code key-codes/H) (reset! keypress :west)
+      (= code key-codes/L) (reset! keypress :east))))
 
 (defn listen []
   (events/listen
