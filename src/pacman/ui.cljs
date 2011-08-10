@@ -61,7 +61,7 @@
 
 (defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
   {:pos (.drawEllipse field x y 4 4 nil (gfx/SolidFill. color))
-   :target (.drawEllipse field tx ty 4 4 (gfx/Stroke. 1 color) nil)})
+   :target (.drawEllipse field tx ty 2 2 (gfx/Stroke. 1 color) nil)})
 
 (defn create-ghosts [field ghosts]
   (def ghost-elems {

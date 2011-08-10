@@ -132,8 +132,28 @@
     :inky (update-ghost :inky (old :inky))
     :clyde (update-ghost :clyde (old :clyde))))
 
+
+(defn pinky-target [{[px py] :tile pface :face}]
+  ; replicates the bug in pinky's targeting while pacman is going north.
+  (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface))
+        [vx vy] (map #(* 4 %) pman-vec)]
+    [(+ px vx) (+ py vy)]))
+
+(defn inky-target [{[px py] :tile pface :face} {[bx by] :tile}]
+  ; same bug in inky's targeting while pacman is going north.
+ (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface)) ;vector of pacman's travel
+       [vx vy] (map #(* 2 %) pman-vec) ; * 2
+       [sx sy] [(+ px vx) (+ py vy)] ; drawn relative to pacman
+       [bvx bvy] [(- sx bx) (- sy by)]] ; vector from blinky to [sx sy]
+   [(+ bx (* 2 bvx)) (+ by (* 2 bvy))])) ; twice that vector, starting at [bx by]
+
+(defn clyde-target [{[px py] :tile} {[cx cy] :tile [hx hy] :home}]
+  (if (> 64 (+ (* (- px cx) (- px cx)) (* (- py cy) (- py cy))))
+    [hx hy]
+    [px py]))
+
 (defn is-scatter? [tick]
-  (even? (Math/floor (/ tick 500))))
+  (= 3 (mod (Math/floor (/ tick 250)) 4))) ; scatter for final 250 of every 1000
 
 (defn update-ghost-targets [g p t]
   (let [scatter (is-scatter? t)]
@@ -149,9 +169,9 @@
         (do
           (-> g
             (assoc-in [:blinky :target-tile] (p :tile))
-            (assoc-in [:pinky :target-tile] (p :tile))
-            (assoc-in [:inky :target-tile] (p :tile))
-            (assoc-in [:clyde :target-tile] (p :tile)))))))
+            (assoc-in [:pinky :target-tile] (pinky-target p))
+            (assoc-in [:inky :target-tile] (inky-target p (g :blinky)))
+            (assoc-in [:clyde :target-tile] (clyde-target p (g :clyde))))))))
 
   (defn next-state [state kp]
     (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
