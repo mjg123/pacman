@@ -36,25 +36,42 @@
     (if (not (nil? edible))
       (.setFill edible eaten-fill))))
 
-(defn create-pacman-elem [field pman]
+(defn create-pacman-elems [field pman]
   (let [[x y] (pman :pos)
-        path (gfx/Path.)]
-    (.moveTo path 4 -4)
-    (.arcToAsCurves path 5.6 5.6 -45 270)
-    (.moveTo path 4 -4)
-    (.lineTo path 0 0)
-    (.lineTo path -4 -4)
+        path1 (gfx/Path.)
+        path2 (gfx/Path.)]
 
-    (let [elem (.drawPath field path (gfx/Stroke. 1 "#FF0"))]
-      ;(.setFill elem pacman-fill) ; TODO - wakawaka
-      (def pacman-elem elem))))
+    (.moveTo path1 0 0)
+    (.arc path1 0 0 5.6 5.6 45 180)
+    (.lineTo path1 0 0)
+
+    (.moveTo path2 0 0)
+    (.arc path2 0 0 5.6 5.6 135 -180)
+    (.lineTo path2 0 0)
+
+    (let [stroke (gfx/Stroke. 1 "#FF0")
+          fill nil;pacman-fill
+          arc1 (.drawPath field path1 stroke fill)
+          arc2 (.drawPath field path2 stroke fill)]
+
+      (def pacman-elems [arc1 arc2]))))
 
 (def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
 (def eye-deltas {:north [0 0] :south [0 0] :east [2 0] :west [-2 0]})
 (def pupil-deltas {:north [0 -1] :south [0 1] :east [3 0] :west [-3 0]})
 
-(defn put-pacman! [[x y] face]
-  (.setTransformation pacman-elem x y (faces face) 0 0))
+(defn waka-waka [tick]
+  (let [t (* 8 tick)
+        m90 (mod t 90)]
+    (if (< 45 m90)
+      (- 90 m90)
+      m90)))
+
+(defn put-pacman! [[x y] face tick]
+  (.setTransformation (first pacman-elems) x y (+ (faces face) (waka-waka tick)) 0 0)
+  (.setTransformation (second pacman-elems) x y (- (faces face) (waka-waka tick)) 0 0))
+
+(def es 2.2) ; eye-spacing
 
 (defn put-ghost! [ghost [x y] face target]
   (let [[tx ty] (tile/middle target)
@@ -63,22 +80,24 @@
     (.setCenter (get-in ghost-elems [ghost :pos]) x y)
     (.setPosition (get-in ghost-elems [ghost :body]) (- x 6) y)
     (.setCenter (get-in ghost-elems [ghost :target]) tx ty)
-    (.setCenter (get-in ghost-elems [ghost :leye]) (+ x edx -2) (+ y edy))
-    (.setCenter (get-in ghost-elems [ghost :lpupil]) (+ x pdx -2) (+ y pdy))
-    (.setCenter (get-in ghost-elems [ghost :reye]) (+ x edx 2) (+ y edy))
-    (.setCenter (get-in ghost-elems [ghost :rpupil]) (+ x pdx 2) (+ y pdy))))
+    (.setCenter (get-in ghost-elems [ghost :leye]) (+ x edx (- es)) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost :lpupil]) (+ x pdx (- es)) (+ y pdy))
+    (.setCenter (get-in ghost-elems [ghost :reye]) (+ x edx es) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost :rpupil]) (+ x pdx es) (+ y pdy))))
 
-(def eye-radius 2.5)
-(def pupil-radius 1.5)
+(def eye-radius-x 2)
+(def eye-radius-y 2.5)
+(def pupil-radius-x 1.5)
+(def pupil-radius-y 1)
 
 (defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
   {:pos (.drawEllipse field x y 6 6 nil (gfx/SolidFill. color))
    :body (.drawRect field (- x 6) y 12 6 nil (gfx/SolidFill. color))
    :target (.drawEllipse field tx ty 2 2 (gfx/Stroke. 1 color) nil)
-   :leye (.drawEllipse field (- x 2) y eye-radius eye-radius nil (gfx/SolidFill. "#FFF"))
-   :reye (.drawEllipse field (+ x 2) y eye-radius eye-radius nil (gfx/SolidFill. "#FFF"))
-   :lpupil (.drawEllipse field (- x 2) y pupil-radius pupil-radius nil (gfx/SolidFill. "#00F"))
-   :rpupil (.drawEllipse field (+ x 2) y pupil-radius pupil-radius nil (gfx/SolidFill. "#00F"))})
+   :leye (.drawEllipse field (- x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
+   :reye (.drawEllipse field (+ x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
+   :lpupil (.drawEllipse field (- x es) y pupil-radius-x pupil-radius-y nil (gfx/SolidFill. "#00F"))
+   :rpupil (.drawEllipse field (+ x es) y pupil-radius-x pupil-radius-y nil (gfx/SolidFill. "#00F"))})
 
 (defn create-ghosts [field ghosts]
   (def ghost-elems {
@@ -100,7 +119,7 @@
       (def edible-elems @edibles))
 
     (create-ghosts field ghosts)
-    (create-pacman-elem field pman)
+    (create-pacman-elems field pman)
 
     (.render field (dom/getElement "playfield"))))
 

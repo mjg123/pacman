@@ -59,12 +59,13 @@
     (def board @board)
     @board)) ; TODO - keep this, *and* return it??  Methods that use the returned value should probably call this ns
 
-(defn tile-open? [[x y]] ;TODO memoize
+(defn tile-open? [[x y]]
   (contains? (board [x y]) :open))
 
 (defn exits [[x y]]
-  (filter #(not (nil? %))
-    [(if (tile-open? [(+ x 1) y]) :east)
+  (filter #(not= nil %)
+    ;ordered so that ghosts choose (up > down > left > right) in tie-breaks
+    [(if (tile-open? [x (- y 1)]) :north)
+     (if (tile-open? [x (+ y 1)]) :south)
      (if (tile-open? [(- x 1) y]) :west)
-     (if (tile-open? [x (- y 1)]) :north)
-     (if (tile-open? [x (+ y 1)]) :south)]))
+     (if (tile-open? [(+ x 1) y]) :east)]))

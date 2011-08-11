@@ -58,26 +58,28 @@
   ;; Reverse direction - don't need to be on a tile centre to do this.
   (if (= old-dir (opposite-dir kp)) kp
 
-    (let [[tx ty] (_tile/tile-at x y)]
-      (if (_tile/tile-center? x y) ; TODO - allow fast cornering
-        (cond
+    (if (= kp :stop) :none
 
-          ;; Change direction
-          (and (= :north kp) (board/tile-open? [tx (- ty 1)])) (do (keyz/consume!) kp)
-          (and (= :south kp) (board/tile-open? [tx (+ ty 1)])) (do (keyz/consume!) kp)
-          (and (= :east kp) (board/tile-open? [(+ tx 1) ty])) (do (keyz/consume!) kp)
-          (and (= :west kp) (board/tile-open? [(- tx 1) ty])) (do (keyz/consume!) kp)
+      (let [[tx ty] (_tile/tile-at x y)]
+        (if (_tile/tile-center? x y) ; TODO - allow fast cornering
+          (cond
 
-          ;; Keep going (if we can)
-          (and (= :north old-dir) (board/tile-open? [tx (- ty 1)])) old-dir
-          (and (= :south old-dir) (board/tile-open? [tx (+ ty 1)])) old-dir
-          (and (= :east old-dir) (board/tile-open? [(+ tx 1) ty])) old-dir
-          (and (= :west old-dir) (board/tile-open? [(- tx 1) ty])) old-dir
+            ;; Change direction
+            (and (= :north kp) (board/tile-open? [tx (- ty 1)])) (do (keyz/consume!) kp)
+            (and (= :south kp) (board/tile-open? [tx (+ ty 1)])) (do (keyz/consume!) kp)
+            (and (= :east kp) (board/tile-open? [(+ tx 1) ty])) (do (keyz/consume!) kp)
+            (and (= :west kp) (board/tile-open? [(- tx 1) ty])) (do (keyz/consume!) kp)
 
-          :else :none)
-        old-dir))))
+            ;; Keep going (if we can)
+            (and (= :north old-dir) (board/tile-open? [tx (- ty 1)])) old-dir
+            (and (= :south old-dir) (board/tile-open? [tx (+ ty 1)])) old-dir
+            (and (= :east old-dir) (board/tile-open? [(+ tx 1) ty])) old-dir
+            (and (= :west old-dir) (board/tile-open? [(- tx 1) ty])) old-dir
 
-(defn update-pacman [old kp board]
+            :else :none)
+          old-dir)))))
+
+(defn update-pacman [old kp board tick]
   (let [[x y] (old :pos)
         new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
         new-face (if (= :none new-move-dir) (old :face) new-move-dir)
@@ -85,7 +87,7 @@
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
-    (ui/put-pacman! [nx ny] new-face)
+    (ui/put-pacman! [nx ny] new-face tick)
 
     (if (not= (old :tile) new-tile)
       (do
@@ -121,7 +123,7 @@
               (if (= 1 (count valid-exits))
                 (first valid-exits)
                 (ghosts/choose-exit new-tile (ghost :target-tile) valid-exits)))
-          
+
             (ghost :next-turn))]
 
       (assoc ghost
@@ -137,6 +139,7 @@
     :inky (update-ghost :inky (old :inky))
     :clyde (update-ghost :clyde (old :clyde))))
 
+;;;;;;;;;;;;;;;;;; MOVE TO GHOSTS NS
 
 (defn pinky-target [{[px py] :tile pface :face}]
   ; replicates the bug in pinky's targeting while pacman is going north.
@@ -156,6 +159,8 @@
   (if (> 64 (+ (* (- px cx) (- px cx)) (* (- py cy) (- py cy))))
     [hx hy]
     [px py]))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defn is-scatter? [tick]
   (= 3 (mod (Math/floor (/ tick 250)) 4))) ; scatter for final 250 of every 1000
@@ -182,7 +187,7 @@
     (assoc state
       :tick (inc (state :tick))
       :ghosts (update-ghosts targetted-ghosts)
-      :pacman (update-pacman (state :pacman) kp (state :board)))))
+      :pacman (update-pacman (state :pacman) kp (state :board) (state :tick)))))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
@@ -190,7 +195,7 @@
 (defn gameloop [state loopstart]
 
   (let [next (next-state state (keyz/kp))
-        now (current-time )
+        now (current-time)
         time-taken (- now loopstart)
         sleep (- 33 time-taken)
         real-sleep (if (> 0 sleep) 0 sleep)]
