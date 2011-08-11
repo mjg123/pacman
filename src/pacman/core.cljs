@@ -16,6 +16,8 @@
   :clyde (_tile/tile 15 14)
   })
 
+(def level-info {:pacman-speed 0.8 :ghost-speed 0.75 :ghost-tunnel-speed 0.4})
+
 (def points {:pellet 10 :energy 50 :no-food 0})
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
@@ -81,30 +83,36 @@
             :else :none)
           old-dir)))))
 
+(defn get-pacman-speed [pman]
+  (if (pman :frozen)
+    0
+    (level-info :pacman-speed)))
+
 (defn tick-pacman [state kp]
   (let [{old :pacman board :board tick :tick} state
         [x y] (old :pos)
         new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
         new-face (if (= :none new-move-dir) (old :face) new-move-dir)
-        [dx dy] (deltas new-move-dir)
+        [dx dy] (map #(* (get-pacman-speed old) %) (deltas new-move-dir))
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
     (ui/put-pacman! [nx ny] new-face tick)
 
-    (let [[new-board score-diff]
-          (if (not= (old :tile) new-tile)
+    (let [[new-board score-diff frozen]
+          (if (and (not= (get-in board [new-tile :food]) :no-food) (not= (old :tile) new-tile))
             (do
               (ui/eat-at! new-tile)
-              [(assoc-in board [new-tile :food] :no-food) (points (get-in board [new-tile :food]))])
-            [board 0])]
+              [(assoc-in board [new-tile :food] :no-food) (points (get-in board [new-tile :food])) true])
+            [board 0 false])]
 
       (assoc state
         :pacman (assoc old
                     :face new-face
                     :move-dir new-move-dir
                     :pos [nx ny]
-                    :tile new-tile)
+                    :tile new-tile
+                    :frozen frozen)
         :score (+ (state :score) score-diff)
         :board new-board))))
 
@@ -114,11 +122,20 @@
       (ghost :next-turn)
       (ghost :face))))
 
+(defn in-tunnel? [[x y]]
+  (and (= y 17)
+    (or (< x 6) (> x 21))))
+
+(defn ghost-speed [tile]
+  (if (in-tunnel? tile)
+    (level-info :ghost-tunnel-speed)
+    (level-info :ghost-speed)))
+
 (defn tick-ghost [name ghost]
 
   (let [[x y] (ghost :pos)
         new-face (ghost-turn ghost)
-        [dx dy] (deltas new-face)
+        [dx dy] (map #(* (ghost-speed (ghost :tile)) %) (deltas new-face))
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
@@ -203,6 +220,7 @@
              :ghosts ghosts
              :board board
              :tick 0
-             :score 0} (current-time)))
+             :score 0
+             :frozen false} (current-time)))
 
 

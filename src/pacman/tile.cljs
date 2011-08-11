@@ -20,8 +20,10 @@
   (defn right [tile] (offset [r m] (pixel-pos tile)))
   (defn left [tile] (offset [l m] (pixel-pos tile))))
 
+(def i Math/floor)
+
 (defn tile-at [x y]
-  (tile (Math/floor (/ x 8)) (Math/floor (/ y 8))))
+  (tile (i (/ (i x) 8)) (i (/ (i y) 8))))
 
 (defn tile-center? [x y]
-  (and (= 4 (mod x 8)) (= 4 (mod y 8))))
+  (and (= 4 (mod (i x) 8)) (= 4 (mod (i y) 8))))

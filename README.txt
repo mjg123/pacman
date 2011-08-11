@@ -5,7 +5,6 @@ todo
  - hi-score table in local storage
  - pacman dies if eaten + lives etc
  - fast cornering
- - ghosts slow through teleporter tunnel
  - ghosts can't turn up/down towards their house
  - ghosts start in the ghost house
  - proper timings for scattering etc
@@ -14,6 +13,8 @@ todo
  - FF 4,5 - SVG error caused by -ve radii in arcTo commands
 
 done
+ - speeds of pacman & ghost adjusted, pacman pauses 1-frame after eating a pellet.
+ - ghosts slow through teleporter tunnel 11/8
  - score 11/8
  - animated pacman 11/8
  - proper ordering for ghost choices when distances are equal (up, down, left, right) 11/8
