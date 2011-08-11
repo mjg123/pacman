@@ -44,6 +44,20 @@
   ([n] (range n '()))
   ([n l] (if (= 0 n) l (recur (dec n) (conj l (- n 1))))))
 
+(defn tile-open? [[x y]]
+  (contains? (board [x y]) :open))
+
+(defn exits [tile]
+  (get-in board [tile :exits]))
+
+(defn- calc-exits [[x y] board]
+  (filter #(not= nil %)
+    ;ordered so that ghosts choose (up > down > left > right) in tie-breaks
+    [(if (contains? (board [x (- y 1)]) :open) :north)
+     (if (contains? (board [x (+ y 1)]) :open) :south)
+     (if (contains? (board [(- x 1) y]) :open) :west)
+     (if (contains? (board [(+ x 1) y]) :open) :east)]))
+
 (defn load []
   (let [board (atom {[-1 17] {:open nil} [28 17] {:open nil}})] ; this is lazy FP!
     (doall (for [y (range (count board-str))
@@ -56,16 +70,10 @@
             (= sq \o) {:open nil :food :no-food}
             (= sq \e) {:open nil :food :energy}
             (= sq \g) {})))))
+
+    (doall (for [y (range (count board-str))
+                 x (range (count (board-str 0)))]
+      (swap! board assoc [x y] (assoc (@board [x y]) :exits (calc-exits [x y] @board)))))
+
     (def board @board)
     @board)) ; TODO - keep this, *and* return it??  Methods that use the returned value should probably call this ns
-
-(defn tile-open? [[x y]]
-  (contains? (board [x y]) :open))
-
-(defn exits [[x y]]
-  (filter #(not= nil %)
-    ;ordered so that ghosts choose (up > down > left > right) in tie-breaks
-    [(if (tile-open? [x (- y 1)]) :north)
-     (if (tile-open? [x (+ y 1)]) :south)
-     (if (tile-open? [(- x 1) y]) :west)
-     (if (tile-open? [(+ x 1) y]) :east)]))

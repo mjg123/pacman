@@ -90,8 +90,8 @@
 
 (def eye-radius-x 2)
 (def eye-radius-y 2.5)
-(def pupil-radius-x 1.5)
-(def pupil-radius-y 1)
+(def pupil-radius-x 1)
+(def pupil-radius-y 1.5)
 
 (defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
   {:pos (.drawEllipse field x y 6 6 nil (gfx/SolidFill. color))
