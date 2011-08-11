@@ -52,10 +52,10 @@
         (swap! board assoc [x y]
           (cond
             (= sq \ ) {}
-            (= sq \p) {:open nil :pellet nil}
-            (= sq \o) {:open nil}
-            (= sq \e) {:open nil :energy nil}
-            :else nil)))))
+            (= sq \p) {:open nil :food :pellet}
+            (= sq \o) {:open nil :food :no-food}
+            (= sq \e) {:open nil :food :energy}
+            (= sq \g) {})))))
     (def board @board)
     @board)) ; TODO - keep this, *and* return it??  Methods that use the returned value should probably call this ns
 

@@ -16,6 +16,8 @@
   :clyde (_tile/tile 15 14)
   })
 
+(def points {:pellet 10 :energy 50 :no-food 0})
+
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
 
 (def pacman-start {:pos (_tile/left (start-tiles :pacman))
@@ -79,8 +81,9 @@
             :else :none)
           old-dir)))))
 
-(defn update-pacman [{old :pacman board :board tick :tick} kp]
-  (let [[x y] (old :pos)
+(defn tick-pacman [state kp]
+  (let [{old :pacman board :board tick :tick} state
+        [x y] (old :pos)
         new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
         new-face (if (= :none new-move-dir) (old :face) new-move-dir)
         [dx dy] (deltas new-move-dir)
@@ -89,15 +92,21 @@
 
     (ui/put-pacman! [nx ny] new-face tick)
 
-    (if (not= (old :tile) new-tile)
-      (do
-        (ui/eat-at! new-tile)))
+    (let [[new-board score-diff]
+          (if (not= (old :tile) new-tile)
+            (do
+              (ui/eat-at! new-tile)
+              [(assoc-in board [new-tile :food] :no-food) (points (get-in board [new-tile :food]))])
+            [board 0])]
 
-    (assoc old
-      :face new-face
-      :move-dir new-move-dir
-      :pos [nx ny]
-      :tile new-tile)))
+      (assoc state
+        :pacman (assoc old
+                    :face new-face
+                    :move-dir new-move-dir
+                    :pos [nx ny]
+                    :tile new-tile)
+        :score (+ (state :score) score-diff)
+        :board new-board))))
 
 (defn ghost-turn [ghost]
   (let [[x y] (ghost :pos)]
@@ -160,11 +169,11 @@
           (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde))))))))
 
 (defn next-state [state kp]
-  (let [targetted-ghosts (update-ghost-targets state)]
-    (assoc state
+  (let [targetted-ghosts (update-ghost-targets state)
+        updated-state (tick-pacman state kp)]
+    (assoc updated-state
       :tick (inc (state :tick))
-      :ghosts (update-ghosts targetted-ghosts)
-      :pacman (update-pacman state kp))))
+      :ghosts (update-ghosts targetted-ghosts))))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
@@ -181,12 +190,19 @@
       (util/log "TOO SLOW")
       (util/log ""))
 
+    (if (not= (state :score) (next :score))
+      (ui/update-score! (next :score)))
+
     (timer/callOnce #(gameloop next now) real-sleep)))
 
 (let [board (board/load)]
   (util/log "starting up")
   (ui/initialize board pacman-start ghosts)
   (keyz/listen)
-  (gameloop {:pacman pacman-start :ghosts ghosts :board board :tick 0} (current-time)))
+  (gameloop {:pacman pacman-start
+             :ghosts ghosts
+             :board board
+             :tick 0
+             :score 0} (current-time)))
 
 

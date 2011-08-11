@@ -4,6 +4,7 @@
     <style type="text/css">
       body {background-color: #D8D7D0}
         #ghostpic{float: right; width: 96px;}
+        #fieldpic{float: right; width: 251px;}
         div {font-size: small; style: inline-block;}
         #playfield {margin: 10px; border: 2px solid #888; display: inline-block}
         #debug {background-color: red;}
@@ -14,12 +15,14 @@
 
     <div id="playfield"></div>
     <img id="ghostpic" src="ghost-names.png"/>
+    <img id="fieldpic" src="tiled-playfield.png"/>
 
     <div id="info">
 Pac-man in ClojureScript.  Use arrow-keys, Doom-keys or vi-keys.  <a href="https://github.com/mjg123/pacman/tree/gh-pages">source</a>.
     </div>
 
     <div id="debug"></div>
+    <div id="log"></div>
 
     <script type="text/javascript" src="./pacman.js"></script>
 

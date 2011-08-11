@@ -25,8 +25,11 @@
   (let [[x y] (tile/middle tile)]
     (.drawCircle field x y 3 nil pellet-fill)))
 
+(defn has-food? [[coord tile-data] food-name]
+  (= (tile-data :food) food-name))
+
 (defn draw-edibles [field board edible-name draw-fn edibles]
-  (let [locations (keys (filter #(contains? (second %) edible-name) board))]
+  (let [locations (keys (filter #(has-food? % edible-name) board))]
     (doall (map
       #(swap! edibles assoc % (draw-fn field %))
       locations))))
@@ -50,7 +53,7 @@
     (.lineTo path2 0 0)
 
     (let [stroke (gfx/Stroke. 1 "#FF0")
-          fill nil;pacman-fill
+          fill nil ;pacman-fill
           arc1 (.drawPath field path1 stroke fill)
           arc2 (.drawPath field path2 stroke fill)]
 
@@ -107,6 +110,21 @@
     :clyde (create-ghost-elems field (ghosts :clyde) (ghost-colors :clyde))
     }))
 
+(def initial-score "0")
+
+(defn update-score! [score]
+  (.setText score-elem (str score)))
+
+(defn create-score [field]
+  (let [[tx ty] (tile/bottom-left (tile/tile 5 0))
+        elem (.drawText field initial-score tx ty 80 8 "left" "bottom" (gfx/Font. 8 "sans-serif") nil (gfx/SolidFill. "#FFF"))]
+    (def score-elem elem)))
+
+
+
+
+(def score-elem (dom/getElement "score"))
+
 (defn initialize [board pman ghosts]
   (let [field (gfx/createGraphics 224 288)]
 
@@ -120,6 +138,8 @@
 
     (create-ghosts field ghosts)
     (create-pacman-elems field pman)
+
+    (create-score field)
 
     (.render field (dom/getElement "playfield"))))
 
