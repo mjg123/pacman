@@ -2,7 +2,6 @@ Pac-Man in-browser using clojurescript
 
 todo
  - html config: show-ghost-targets, slow-x10, invincible
- - score
  - hi-score table in local storage
  - pacman dies if eaten + lives etc
  - fast cornering
@@ -15,6 +14,7 @@ todo
  - FF 4,5 - SVG error caused by -ve radii in arcTo commands
 
 done
+ - score 11/8
  - animated pacman 11/8
  - proper ordering for ghost choices when distances are equal (up, down, left, right) 11/8
  - ghost eyes should be tall and thin, not circles 11/8

@@ -114,7 +114,7 @@
       (ghost :next-turn)
       (ghost :face))))
 
-(defn update-ghost [name ghost]
+(defn tick-ghost [name ghost]
 
   (let [[x y] (ghost :pos)
         new-face (ghost-turn ghost)
@@ -141,17 +141,17 @@
         :face new-face
         :next-turn next-turn))))
 
-(defn update-ghosts [old]
+(defn tick-ghosts [old]
   (assoc old
-    :blinky (update-ghost :blinky (old :blinky))
-    :pinky (update-ghost :pinky (old :pinky))
-    :inky (update-ghost :inky (old :inky))
-    :clyde (update-ghost :clyde (old :clyde))))
+    :blinky (tick-ghost :blinky (old :blinky))
+    :pinky (tick-ghost :pinky (old :pinky))
+    :inky (tick-ghost :inky (old :inky))
+    :clyde (tick-ghost :clyde (old :clyde))))
 
 (defn is-scatter? [tick]
   (= 3 (mod (Math/floor (/ tick 250)) 4))) ; scatter for final 250 of every 1000
 
-(defn update-ghost-targets [{g :ghosts p :pacman t :tick}]
+(defn tick-ghost-targets [{g :ghosts p :pacman t :tick}]
   (let [scatter (is-scatter? t)]
     (if scatter
       (do
@@ -169,11 +169,11 @@
           (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde))))))))
 
 (defn next-state [state kp]
-  (let [targetted-ghosts (update-ghost-targets state)
+  (let [targetted-ghosts (tick-ghost-targets state)
         updated-state (tick-pacman state kp)]
     (assoc updated-state
       :tick (inc (state :tick))
-      :ghosts (update-ghosts targetted-ghosts))))
+      :ghosts (tick-ghosts targetted-ghosts))))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
