@@ -79,7 +79,7 @@
             :else :none)
           old-dir)))))
 
-(defn update-pacman [old kp board tick]
+(defn update-pacman [{old :pacman board :board tick :tick} kp]
   (let [[x y] (old :pos)
         new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
         new-face (if (= :none new-move-dir) (old :face) new-move-dir)
@@ -139,33 +139,10 @@
     :inky (update-ghost :inky (old :inky))
     :clyde (update-ghost :clyde (old :clyde))))
 
-;;;;;;;;;;;;;;;;;; MOVE TO GHOSTS NS
-
-(defn pinky-target [{[px py] :tile pface :face}]
-  ; replicates the bug in pinky's targeting while pacman is going north.
-  (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface))
-        [vx vy] (map #(* 4 %) pman-vec)]
-    [(+ px vx) (+ py vy)]))
-
-(defn inky-target [{[px py] :tile pface :face} {[bx by] :tile}]
-  ; same bug in inky's targeting while pacman is going north.
-  (let [pman-vec (if (= :north pface) [-1 -1] (deltas pface)) ;vector of pacman's travel
-        [vx vy] (map #(* 2 %) pman-vec) ; * 2
-        [sx sy] [(+ px vx) (+ py vy)] ; drawn relative to pacman
-        [bvx bvy] [(- sx bx) (- sy by)]] ; vector from blinky to [sx sy]
-    [(+ bx (* 2 bvx)) (+ by (* 2 bvy))])) ; twice that vector, starting at [bx by]
-
-(defn clyde-target [{[px py] :tile} {[cx cy] :tile [hx hy] :home}]
-  (if (> 64 (+ (* (- px cx) (- px cx)) (* (- py cy) (- py cy))))
-    [hx hy]
-    [px py]))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn is-scatter? [tick]
   (= 3 (mod (Math/floor (/ tick 250)) 4))) ; scatter for final 250 of every 1000
 
-(defn update-ghost-targets [g p t]
+(defn update-ghost-targets [{g :ghosts p :pacman t :tick}]
   (let [scatter (is-scatter? t)]
     (if scatter
       (do
@@ -178,16 +155,16 @@
       (do
         (-> g
           (assoc-in [:blinky :target-tile] (p :tile))
-          (assoc-in [:pinky :target-tile] (pinky-target p))
-          (assoc-in [:inky :target-tile] (inky-target p (g :blinky)))
-          (assoc-in [:clyde :target-tile] (clyde-target p (g :clyde))))))))
+          (assoc-in [:pinky :target-tile] (ghosts/pinky-target p))
+          (assoc-in [:inky :target-tile] (ghosts/inky-target p (g :blinky)))
+          (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde))))))))
 
 (defn next-state [state kp]
-  (let [targetted-ghosts (update-ghost-targets (state :ghosts) (state :pacman) (state :tick))] ; TODO - destructre map
+  (let [targetted-ghosts (update-ghost-targets state)]
     (assoc state
       :tick (inc (state :tick))
       :ghosts (update-ghosts targetted-ghosts)
-      :pacman (update-pacman (state :pacman) kp (state :board) (state :tick)))))
+      :pacman (update-pacman state kp))))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
