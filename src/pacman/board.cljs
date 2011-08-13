@@ -47,8 +47,8 @@
 (defn tile-open? [[x y]]
   (contains? (board [x y]) :open))
 
-(defn exits [tile]
-  (get-in board [tile :exits]))
+(defn prop [tile prop-name]
+  (get-in board [tile prop-name]))
 
 (defn- calc-exits [[x y] board]
   (filter #(not= nil %)
@@ -57,6 +57,9 @@
      (if (contains? (board [x (+ y 1)]) :open) :south)
      (if (contains? (board [(- x 1) y]) :open) :west)
      (if (contains? (board [(+ x 1) y]) :open) :east)]))
+
+(defn- is-lr-tile? [x y]
+  (some #{[x y]} [[12 26][15 26][12 14][15 14]]))
 
 (defn load []
   (let [board (atom {[-1 17] {:open nil} [28 17] {:open nil}})] ; this is lazy FP!
@@ -73,7 +76,12 @@
 
     (doall (for [y (range (count board-str))
                  x (range (count (board-str 0)))]
-      (swap! board assoc [x y] (assoc (@board [x y]) :exits (calc-exits [x y] @board)))))
+      (let [all-exits (calc-exits [x y] @board)
+            ghost-exits (if (is-lr-tile? x y) '(:west :east) all-exits)]
+        (swap! board assoc [x y]
+          (assoc (@board [x y])
+            :exits all-exits
+            :ghost-exits ghost-exits)))))
 
     (def board @board)
     @board)) ; TODO - keep this, *and* return it??  Methods that use the returned value should probably call this ns

@@ -1,6 +1,8 @@
 Pac-Man in-browser using clojurescript
 
 todo
+ - testing framework
+ - compiler warning about undeclared vars
  - html config: show-ghost-targets, slow-x10, invincible
  - hi-score table in local storage
  - pacman dies if eaten + lives etc

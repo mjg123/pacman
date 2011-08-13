@@ -62,26 +62,24 @@
   ;; Reverse direction - don't need to be on a tile centre to do this.
   (if (= old-dir (opposite-dir kp)) kp
 
-    (if (= kp :stop) :none
+    (let [[tx ty] (_tile/tile-at x y)]
+      (if (_tile/tile-center? x y) ; TODO - allow fast cornering
+        (cond
 
-      (let [[tx ty] (_tile/tile-at x y)]
-        (if (_tile/tile-center? x y) ; TODO - allow fast cornering
-          (cond
+          ;; Change direction
+          (and (= :north kp) (board/tile-open? [tx (- ty 1)])) (do (keyz/consume!) kp)
+          (and (= :south kp) (board/tile-open? [tx (+ ty 1)])) (do (keyz/consume!) kp)
+          (and (= :east kp) (board/tile-open? [(+ tx 1) ty])) (do (keyz/consume!) kp)
+          (and (= :west kp) (board/tile-open? [(- tx 1) ty])) (do (keyz/consume!) kp)
 
-            ;; Change direction
-            (and (= :north kp) (board/tile-open? [tx (- ty 1)])) (do (keyz/consume!) kp)
-            (and (= :south kp) (board/tile-open? [tx (+ ty 1)])) (do (keyz/consume!) kp)
-            (and (= :east kp) (board/tile-open? [(+ tx 1) ty])) (do (keyz/consume!) kp)
-            (and (= :west kp) (board/tile-open? [(- tx 1) ty])) (do (keyz/consume!) kp)
+          ;; Keep going (if we can)
+          (and (= :north old-dir) (board/tile-open? [tx (- ty 1)])) old-dir
+          (and (= :south old-dir) (board/tile-open? [tx (+ ty 1)])) old-dir
+          (and (= :east old-dir) (board/tile-open? [(+ tx 1) ty])) old-dir
+          (and (= :west old-dir) (board/tile-open? [(- tx 1) ty])) old-dir
 
-            ;; Keep going (if we can)
-            (and (= :north old-dir) (board/tile-open? [tx (- ty 1)])) old-dir
-            (and (= :south old-dir) (board/tile-open? [tx (+ ty 1)])) old-dir
-            (and (= :east old-dir) (board/tile-open? [(+ tx 1) ty])) old-dir
-            (and (= :west old-dir) (board/tile-open? [(- tx 1) ty])) old-dir
-
-            :else :none)
-          old-dir)))))
+          :else :none)
+        old-dir))))
 
 (defn get-pacman-speed [pman]
   (if (pman :frozen)
@@ -108,11 +106,11 @@
 
       (assoc state
         :pacman (assoc old
-                    :face new-face
-                    :move-dir new-move-dir
-                    :pos [nx ny]
-                    :tile new-tile
-                    :frozen frozen)
+          :face new-face
+          :move-dir new-move-dir
+          :pos [nx ny]
+          :tile new-tile
+          :frozen frozen)
         :score (+ (state :score) score-diff)
         :board new-board))))
 
@@ -143,7 +141,7 @@
 
     (let [next-turn
           (if (not= (ghost :tile) new-tile)
-            (let [exits (board/exits new-tile)
+            (let [exits (board/prop new-tile :ghost-exits)
                   valid-exits (remove #(= (opposite-dir (ghost :face)) %) exits)]
 
               (if (= 1 (count valid-exits))
@@ -204,8 +202,7 @@
         real-sleep (if (> 0 sleep) 0 sleep)]
 
     (if (not= sleep real-sleep)
-      (util/log "TOO SLOW")
-      (util/log ""))
+      (util/log (str "TOO SLOW @ " (state :tick))))
 
     (if (not= (state :score) (next :score))
       (ui/update-score! (next :score)))

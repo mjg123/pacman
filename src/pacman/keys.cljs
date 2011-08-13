@@ -14,8 +14,6 @@
 (defn handle-key [key]
   (let [code (.keyCode key)]
     (cond
-      ; emergency stop (for testing)
-      (= code key-codes/CLOSE_SQUARE_BRACKET) (reset! keypress :stop)
 
       ; arrow keys
       (= code key-codes/UP) (reset! keypress :north)
