@@ -60,8 +60,8 @@
       (def pacman-elems [arc1 arc2]))))
 
 (def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
-(def eye-deltas {:north [0 0] :south [0 0] :east [2 0] :west [-2 0]})
-(def pupil-deltas {:north [0 -1] :south [0 1] :east [3 0] :west [-3 0]})
+(def eye-deltas {:north [0 -2] :south [0 0] :east [2 0] :west [-2 0]})
+(def pupil-deltas {:north [0 -3] :south [0 1] :east [3 0] :west [-3 0]})
 
 (defn waka-waka [tick]
   (let [t (* 8 tick)
