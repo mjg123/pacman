@@ -21,7 +21,8 @@
 (def opposite-dir {:east :west
                    :west :east
                    :north :south
-                   :south :north})
+                   :south :north
+                   :none :none})
 
 (defn get-new-move-dir [x y kp old-dir board]
 
@@ -95,10 +96,11 @@
     (level-info :ghost-tunnel-speed)
     (level-info :ghost-speed)))
 
-(defn tick-ghost [name ghost level-info]
+(defn tick-ghost [name ghost {level-info :level-info mode :ghost-mode} old-mode]
 
-  (let [[x y] (ghost :pos)
-        new-face (ghost-turn ghost)
+  (let [turnaround (not= mode old-mode)
+        [x y] (ghost :pos)
+        new-face (if turnaround (opposite-dir (ghost :face))  (ghost-turn ghost))
         [dx dy] (map #(* (ghost-speed (ghost :tile) level-info) %) (deltas new-face))
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
@@ -106,7 +108,7 @@
     (ui/put-ghost! name [nx ny] new-face (ghost :target-tile))
 
     (let [next-turn
-          (if (not= (ghost :tile) new-tile)
+          (if (or turnaround (not= (ghost :tile) new-tile))
             (let [exits (board/prop new-tile :ghost-exits)
                   valid-exits (remove #(= (opposite-dir (ghost :face)) %) exits)]
 
@@ -122,13 +124,13 @@
         :face new-face
         :next-turn next-turn))))
 
-(defn tick-ghosts [state]
+(defn tick-ghosts [old-mode state]
   (let [ghosts (state :ghosts)]
     (assoc ghosts
-      :blinky (tick-ghost :blinky (ghosts :blinky) (state :level-info))
-      :pinky (tick-ghost :pinky (ghosts :pinky) (state :level-info))
-      :inky (tick-ghost :inky (ghosts :inky) (state :level-info))
-      :clyde (tick-ghost :clyde (ghosts :clyde) (state :level-info)))))
+      :blinky (tick-ghost :blinky (ghosts :blinky) state old-mode)
+      :pinky (tick-ghost :pinky (ghosts :pinky) state old-mode)
+      :inky (tick-ghost :inky (ghosts :inky) state old-mode)
+      :clyde (tick-ghost :clyde (ghosts :clyde) state old-mode))))
 
 (defn tick-ghost-targets [{g :ghosts p :pacman t :tick mode :ghost-mode}]
 
@@ -152,14 +154,15 @@
 
 (defn next-state [old-state kp]
 
-  (let [updated-state (-> old-state
-        (assoc :ghost-mode (new-ghost-mode old-state))
-    (assoc :ghosts (tick-ghost-targets old-state))
-    (tick-pacman kp)
-    (assoc :tick (inc (old-state :tick))))]
+  (let [new-state (assoc old-state :ghost-mode (new-ghost-mode old-state))
+        new-state (assoc new-state :ghosts (tick-ghost-targets old-state))
+        new-state (assoc new-state :tick (inc (old-state :tick)))
 
-    (assoc updated-state
-      :ghosts (tick-ghosts updated-state))))
+        new-state (tick-pacman new-state kp)
+        new-state (assoc new-state :ghosts (tick-ghosts (old-state :ghost-mode) new-state))
+        ]
+new-state
+    ))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
@@ -187,6 +190,7 @@
              :board board
              :tick 0
              :score 0
+             :ghost-mode :scatter
              :frozen false ;TODO this should be a count, in :pacman
              :level-info (levels/level-info 1)}
             (current-time)))

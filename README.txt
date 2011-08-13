@@ -1,7 +1,6 @@
 Pac-Man in-browser using clojurescript
 
 todo
- - ghosts reverse direction on mode-change
  - testing framework
  - compiler warning about undeclared vars
  - html config: show-ghost-targets, slow-x10, invincible
@@ -14,6 +13,7 @@ todo
  - FF 4,5 - SVG error caused by -ve radii in arcTo commands
 
 done
+ - ghosts reverse direction on mode-change 13/8
  - proper timings for scattering etc 13/8
  - ghosts can't turn up/down towards their house 13/8
  - speeds of pacman & ghost adjusted, pacman pauses 1-frame after eating a pellet. 11/8
