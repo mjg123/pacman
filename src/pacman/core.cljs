@@ -110,7 +110,7 @@
     (let [next-turn
           (if (or turnaround (not= (ghost :tile) new-tile))
             (let [exits (board/prop new-tile :ghost-exits)
-                  valid-exits (remove #(= (opposite-dir (ghost :face)) %) exits)]
+                  valid-exits (remove #(= (opposite-dir new-face) %) exits)]
 
               (if (= 1 (count valid-exits))
                 (first valid-exits)
