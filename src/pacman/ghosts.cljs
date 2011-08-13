@@ -1,7 +1,41 @@
 (ns pacman.ghosts
-  (:require [pacman.util :as util]))
+  (:require [pacman.util :as util]
+            [pacman.tile :as tile]))
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1]})
+
+(def start-tiles {
+  :blinky (tile/tile 14 14)
+  :pinky (tile/tile 12 14)
+  :inky (tile/tile 13 14)
+  :clyde (tile/tile 15 14)
+  })
+
+(defn init []
+            {:blinky {:pos (tile/left (start-tiles :blinky))
+                      :tile (start-tiles :blinky)
+                      :target-tile (tile/tile 25 0)
+                      :home (tile/tile 25 0)
+                      :face :west ; TODO - choose starting face better?
+                      :next-turn :none}
+             :pinky {:pos (tile/left (start-tiles :pinky))
+                     :tile (start-tiles :pinky)
+                     :target-tile (tile/tile 2 0)
+                     :home (tile/tile 2 0)
+                     :face :west ; TODO - choose starting face better?
+                     :next-turn :none}
+             :inky {:pos (tile/left (start-tiles :inky))
+                    :tile (start-tiles :inky)
+                    :target-tile (tile/tile 27 35)
+                    :home (tile/tile 27 35)
+                    :face :west ; TODO - choose starting face better?
+                    :next-turn :none}
+             :clyde {:pos (tile/left (start-tiles :clyde))
+                     :tile (start-tiles :clyde)
+                     :target-tile (tile/tile 0 35)
+                     :home (tile/tile 0 35)
+                     :face :west ; TODO - choose starting face better?
+                     :next-turn :none}})
 
 (defn offset [[x1 y1] [x2 y2]]
   [(+ x1 x2) (+ y1 y2)])

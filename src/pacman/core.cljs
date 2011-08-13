@@ -5,52 +5,18 @@
     [pacman.keys :as keyz]
     [pacman.ghosts :as ghosts]
     [pacman.tile :as _tile]
+    [pacman.levels :as levels]
     [goog.Timer :as timer]
     [goog.date :as date]))
-
-(def start-tiles {
-  :pacman (_tile/tile 14 26)
-  :blinky (_tile/tile 14 14)
-  :pinky (_tile/tile 12 14)
-  :inky (_tile/tile 13 14)
-  :clyde (_tile/tile 15 14)
-  })
-
-(def level-info {:pacman-speed 0.8 :ghost-speed 0.75 :ghost-tunnel-speed 0.4})
 
 (def points {:pellet 10 :energy 50 :no-food 0})
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
 
-(def pacman-start {:pos (_tile/left (start-tiles :pacman))
-                   :tile (start-tiles :pacman)
+(def pacman-start {:pos (_tile/left (_tile/tile 14 26))
+                   :tile (_tile/tile 14 26)
                    :face :west
                    :move-dir :west})
-
-(def ghosts {:blinky {:pos (_tile/left (start-tiles :blinky))
-                      :tile (start-tiles :blinky)
-                      :target-tile (_tile/tile 25 0)
-                      :home (_tile/tile 25 0)
-                      :face :west ; TODO - choose starting face better?
-                      :next-turn :none}
-             :pinky {:pos (_tile/left (start-tiles :pinky))
-                     :tile (start-tiles :pinky)
-                     :target-tile (_tile/tile 2 0)
-                     :home (_tile/tile 2 0)
-                     :face :west ; TODO - choose starting face better?
-                     :next-turn :none}
-             :inky {:pos (_tile/left (start-tiles :inky))
-                    :tile (start-tiles :inky)
-                    :target-tile (_tile/tile 27 35)
-                    :home (_tile/tile 27 35)
-                    :face :west ; TODO - choose starting face better?
-                    :next-turn :none}
-             :clyde {:pos (_tile/left (start-tiles :clyde))
-                     :tile (start-tiles :clyde)
-                     :target-tile (_tile/tile 0 35)
-                     :home (_tile/tile 0 35)
-                     :face :west ; TODO - choose starting face better?
-                     :next-turn :none}})
 
 (def opposite-dir {:east :west
                    :west :east
@@ -81,17 +47,17 @@
           :else :none)
         old-dir))))
 
-(defn get-pacman-speed [pman]
-  (if (pman :frozen)
+(defn get-pacman-speed [state]
+  (if (get-in state [:pacman :frozen])
     0
-    (level-info :pacman-speed)))
+    (get-in state [:level-info :pacman-speed])))
 
 (defn tick-pacman [state kp]
   (let [{old :pacman board :board tick :tick} state
         [x y] (old :pos)
         new-move-dir (get-new-move-dir x y kp (old :move-dir) board)
         new-face (if (= :none new-move-dir) (old :face) new-move-dir)
-        [dx dy] (map #(* (get-pacman-speed old) %) (deltas new-move-dir))
+        [dx dy] (map #(* (get-pacman-speed state) %) (deltas new-move-dir))
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
@@ -106,11 +72,11 @@
 
       (assoc state
         :pacman (assoc old
-          :face new-face
-          :move-dir new-move-dir
-          :pos [nx ny]
-          :tile new-tile
-          :frozen frozen)
+        :face new-face
+        :move-dir new-move-dir
+        :pos [nx ny]
+        :tile new-tile
+        :frozen frozen)
         :score (+ (state :score) score-diff)
         :board new-board))))
 
@@ -124,16 +90,16 @@
   (and (= y 17)
     (or (< x 6) (> x 21))))
 
-(defn ghost-speed [tile]
+(defn ghost-speed [tile level-info]
   (if (in-tunnel? tile)
     (level-info :ghost-tunnel-speed)
     (level-info :ghost-speed)))
 
-(defn tick-ghost [name ghost]
+(defn tick-ghost [name ghost level-info]
 
   (let [[x y] (ghost :pos)
         new-face (ghost-turn ghost)
-        [dx dy] (map #(* (ghost-speed (ghost :tile)) %) (deltas new-face))
+        [dx dy] (map #(* (ghost-speed (ghost :tile) level-info) %) (deltas new-face))
         [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
         new-tile (_tile/tile-at nx ny)]
 
@@ -156,45 +122,49 @@
         :face new-face
         :next-turn next-turn))))
 
-(defn tick-ghosts [old]
-  (assoc old
-    :blinky (tick-ghost :blinky (old :blinky))
-    :pinky (tick-ghost :pinky (old :pinky))
-    :inky (tick-ghost :inky (old :inky))
-    :clyde (tick-ghost :clyde (old :clyde))))
+(defn tick-ghosts [state]
+  (let [ghosts (state :ghosts)]
+    (assoc ghosts
+      :blinky (tick-ghost :blinky (ghosts :blinky) (state :level-info))
+      :pinky (tick-ghost :pinky (ghosts :pinky) (state :level-info))
+      :inky (tick-ghost :inky (ghosts :inky) (state :level-info))
+      :clyde (tick-ghost :clyde (ghosts :clyde) (state :level-info)))))
 
-(defn is-scatter? [tick]
-  (= 3 (mod (Math/floor (/ tick 250)) 4))) ; scatter for final 250 of every 1000
+(defn tick-ghost-targets [{g :ghosts p :pacman t :tick mode :ghost-mode}]
 
-(defn tick-ghost-targets [{g :ghosts p :pacman t :tick}]
-  (let [scatter (is-scatter? t)]
-    (if scatter
-      (do
-        (-> g
-          (assoc-in [:blinky :target-tile] (get-in g [:blinky :home]))
-          (assoc-in [:pinky :target-tile] (get-in g [:pinky :home]))
-          (assoc-in [:inky :target-tile] (get-in g [:inky :home]))
-          (assoc-in [:clyde :target-tile] (get-in g [:clyde :home]))))
+  (if (= :scatter mode)
+    (do
+      (-> g
+        (assoc-in [:blinky :target-tile] (get-in g [:blinky :home]))
+        (assoc-in [:pinky :target-tile] (get-in g [:pinky :home]))
+        (assoc-in [:inky :target-tile] (get-in g [:inky :home]))
+        (assoc-in [:clyde :target-tile] (get-in g [:clyde :home]))))
 
-      (do
-        (-> g
-          (assoc-in [:blinky :target-tile] (p :tile))
-          (assoc-in [:pinky :target-tile] (ghosts/pinky-target p))
-          (assoc-in [:inky :target-tile] (ghosts/inky-target p (g :blinky)))
-          (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde))))))))
+    (do
+      (-> g
+        (assoc-in [:blinky :target-tile] (p :tile))
+        (assoc-in [:pinky :target-tile] (ghosts/pinky-target p))
+        (assoc-in [:inky :target-tile] (ghosts/inky-target p (g :blinky)))
+        (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde)))))))
 
-(defn next-state [state kp]
-  (let [targetted-ghosts (tick-ghost-targets state)
-        updated-state (tick-pacman state kp)]
+(defn new-ghost-mode [{tick :tick {times :ghost-mode-times} :level-info old-mode :ghost-mode}]
+  (get times tick old-mode))
+
+(defn next-state [old-state kp]
+
+  (let [updated-state (-> old-state
+        (assoc :ghost-mode (new-ghost-mode old-state))
+    (assoc :ghosts (tick-ghost-targets old-state))
+    (tick-pacman kp)
+    (assoc :tick (inc (old-state :tick))))]
+
     (assoc updated-state
-      :tick (inc (state :tick))
-      :ghosts (tick-ghosts targetted-ghosts))))
+      :ghosts (tick-ghosts updated-state))))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
 
 (defn gameloop [state loopstart]
-
   (let [next (next-state state (keyz/kp))
         now (current-time)
         time-taken (- now loopstart)
@@ -210,14 +180,14 @@
     (timer/callOnce #(gameloop next now) real-sleep)))
 
 (let [board (board/load)]
-  (util/log "starting up")
-  (ui/initialize board pacman-start ghosts)
+  (ui/initialize board pacman-start (ghosts/init))
   (keyz/listen)
   (gameloop {:pacman pacman-start
-             :ghosts ghosts
+             :ghosts (ghosts/init)
              :board board
              :tick 0
              :score 0
-             :frozen false} (current-time)))
-
+             :frozen false ;TODO this should be a count, in :pacman
+             :level-info (levels/level-info 1)}
+            (current-time)))
 

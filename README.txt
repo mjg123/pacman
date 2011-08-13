@@ -1,21 +1,22 @@
 Pac-Man in-browser using clojurescript
 
 todo
+ - ghosts reverse direction on mode-change
  - testing framework
  - compiler warning about undeclared vars
  - html config: show-ghost-targets, slow-x10, invincible
  - hi-score table in local storage
  - pacman dies if eaten + lives etc
  - fast cornering
- - ghosts can't turn up/down towards their house
  - ghosts start in the ghost house
- - proper timings for scattering etc
  - energy -> frightened ghosts, scatter timer stops, pacman can eat them
  - FF 3.6 - "too much recursion" error
  - FF 4,5 - SVG error caused by -ve radii in arcTo commands
 
 done
- - speeds of pacman & ghost adjusted, pacman pauses 1-frame after eating a pellet.
+ - proper timings for scattering etc 13/8
+ - ghosts can't turn up/down towards their house 13/8
+ - speeds of pacman & ghost adjusted, pacman pauses 1-frame after eating a pellet. 11/8
  - ghosts slow through teleporter tunnel 11/8
  - score 11/8
  - animated pacman 11/8

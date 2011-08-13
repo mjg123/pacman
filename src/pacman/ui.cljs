@@ -63,7 +63,7 @@
 (def eye-deltas {:north [0 -2] :south [0 0] :east [2 0] :west [-2 0]})
 (def pupil-deltas {:north [0 -3] :south [0 1] :east [3 0] :west [-3 0]})
 
-(defn waka-waka [tick]
+(defn waka-waka "angle of pacman's open mouth" [tick]
   (let [t (* 8 tick)
         m90 (mod t 90)]
     (if (< 45 m90)
