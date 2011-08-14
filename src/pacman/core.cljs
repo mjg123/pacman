@@ -228,28 +228,35 @@
     (if (not= (state :score) (next :score))
       (ui/update-score! (next :score)))
 
-    (timer/callOnce #(gameloop next now) real-sleep)))
+    (if (= 244 (get-in next [:pacman :food-count]))
+      (timer/callOnce #(wait-for-start (next :score) (inc (next :level-no))))
+      (timer/callOnce #(gameloop next now) real-sleep))))
 
-(defn wait-for-start []
+(defn wait-for-start [score level]
+
+  (ui/show-ready-message! level)
 
   (if (= (keyz/kp) :start-game)
     (do
+      (keyz/consume!)
       (ui/clear-ready-message!)
+      (ui/reset-edibles!)
       (gameloop {:pacman pacman-start
                  :ghosts (ghosts/init)
                  :board (board/get-default)
                  :tick 0
-                 :score 0
+                 :score score
                  :ghost-mode :scatter ; TODO - this should be in :ghosts
                  :frozen false ;TODO this should be a count, in :pacman
-                 :level-info (levels/level-info 1)}
+                 :level-no level
+                 :level-info (levels/level-info level)}
         (current-time)))
 
-    (timer/callOnce wait-for-start 50)))
+    (timer/callOnce #(wait-for-start score level) 50)))
 
 (do
   (board/load)
   (ui/initialize (board/get-default) pacman-start (ghosts/init))
   (keyz/listen)
-  (wait-for-start))
+  (wait-for-start 0 1))
 

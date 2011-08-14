@@ -39,6 +39,9 @@
     (if (not (nil? edible))
       (.setFill edible eaten-fill))))
 
+(defn reset-edibles! []
+  (doall (map #(.setFill (second %) pellet-fill) edible-elems)))
+
 (defn create-pacman-elems [field pman]
   (let [[x y] (pman :pos)
         path1 (gfx/Path.)
@@ -123,14 +126,18 @@
 (defn clear-ready-message! []
   (.setTransformation ready-elem 1000 1000 0 0 0))
 
+(defn show-ready-message! [level]
+  (let [msg (if (= 1 level) "READY!" (str "LEVEL " level))]
+    (.setText ready-elem msg)
+    (.setTransformation ready-elem 0 0 0 0 0)))
+
 (defn initialize [board pman ghosts]
   (let [field (gfx/createGraphics 224 288)]
 
     (black-background field)
     (maze/draw-maze field maze-color)
 
-    (let [[tx ty] [90 163]]
-      (def ready-elem (.drawText field "READY!" tx ty 80 8 "left" "bottom" (gfx/Font. 12 "sans-serif") nil (gfx/SolidFill. "#FF0"))))
+    (def ready-elem (.drawText field "READY!" 90 163 80 8 "left" "bottom" (gfx/Font. 12 "sans-serif") nil (gfx/SolidFill. "#FF0")))
 
     (let [edibles (atom {})]
       (draw-edibles field board :pellet draw-pellet edibles)
