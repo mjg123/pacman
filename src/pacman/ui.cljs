@@ -120,16 +120,17 @@
         elem (.drawText field initial-score tx ty 80 8 "left" "bottom" (gfx/Font. 8 "sans-serif") nil (gfx/SolidFill. "#FFF"))]
     (def score-elem elem)))
 
-
-
-
-(def score-elem (dom/getElement "score"))
+(defn clear-ready-message! []
+  (.setTransformation ready-elem 1000 1000 0 0 0))
 
 (defn initialize [board pman ghosts]
   (let [field (gfx/createGraphics 224 288)]
 
     (black-background field)
     (maze/draw-maze field maze-color)
+
+    (let [[tx ty] [90 163]]
+      (def ready-elem (.drawText field "READY!" tx ty 80 8 "left" "bottom" (gfx/Font. 12 "sans-serif") nil (gfx/SolidFill. "#FF0"))))
 
     (let [edibles (atom {})]
       (draw-edibles field board :pellet draw-pellet edibles)
@@ -138,6 +139,8 @@
 
     (create-ghosts field ghosts)
     (create-pacman-elems field pman)
+
+    (put-pacman! (pman :pos) (pman :face) 0)
 
     (create-score field)
 

@@ -17,7 +17,7 @@
   "      p     o  o     p      "
   "      p     o  o     p      "
   "      p  oooooooooo  p      "
-  "      p  o        o  p      "
+  "      p  o   gg   o  p      "
   "      p  o gggggg o  p      "
   "oooooopooo gggggg ooopoooooo"
   "      p  o gggggg o  p      "
@@ -72,12 +72,14 @@
             (= sq \p) {:open nil :food :pellet}
             (= sq \o) {:open nil :food :no-food}
             (= sq \e) {:open nil :food :energy}
-            (= sq \g) {})))))
+            (= sq \g) {:ghost-door nil})))))
 
     (doall (for [y (range (count board-str))
                  x (range (count (board-str 0)))]
       (let [all-exits (calc-exits [x y] @board)
-            ghost-exits (if (is-lr-tile? x y) '(:west :east) all-exits)]
+            ghost-exits (cond
+                           (is-lr-tile? x y) '(:west :east)
+                           :else all-exits)]
         (swap! board assoc [x y]
           (assoc (@board [x y])
             :exits all-exits
@@ -85,3 +87,6 @@
 
     (def board @board)
     @board)) ; TODO - keep this, *and* return it??  Methods that use the returned value should probably call this ns
+
+
+(defn get-default [] board)

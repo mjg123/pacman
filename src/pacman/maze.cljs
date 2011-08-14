@@ -123,21 +123,27 @@
 
     (let [path (gfx/Path.)]
       (-> path
-        (moveTo (middle (tile 10 15)))
+        (moveTo (left (tile 15 15)))
         (lineTo (middle (tile 17 15)))
         (lineTo (middle (tile 17 19)))
         (lineTo (middle (tile 10 19)))
-        (lineTo (middle (tile 10 15))))
+        (lineTo (middle (tile 10 15)))
+        (lineTo (right (tile 12 15)))
+        (lineTo (bottom-right (tile 12 15)))
+        (lineTo (bottom-right (tile 10 15)))
+        (lineTo (top-right (tile 10 19)))
+        (lineTo (top-left (tile 17 19)))
+        (lineTo (bottom-left (tile 17 15)))
+        (lineTo (bottom-left (tile 15 15)))
+        (lineTo (left (tile 15 15))))
       (.drawPath field path maze-stroke))
 
     (let [path (gfx/Path.)]
       (-> path
-        (moveTo (bottom-right (tile 10 15)))
-        (lineTo (bottom-left (tile 17 15)))
-        (lineTo (top-left (tile 17 19)))
-        (lineTo (top-right (tile 10 19)))
-        (lineTo (bottom-right (tile 10 15))))
-      (.drawPath field path maze-stroke))
+        (moveTo (left (tile 13 15)))
+        (lineTo (right (tile 14 15))))
+      (.drawPath field path (gfx/Stroke. 2 "#FAA")))
+
 
     (.drawPath field (t-shape 10 9) maze-stroke)
     (.drawPath field (t-shape 10 21) maze-stroke)

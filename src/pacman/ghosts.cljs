@@ -6,9 +6,9 @@
 
 (def start-tiles {
   :blinky (tile/tile 14 14)
-  :pinky (tile/tile 12 14)
-  :inky (tile/tile 13 14)
-  :clyde (tile/tile 15 14)
+  :pinky (tile/tile 14 17)
+  :inky (tile/tile 12 17)
+  :clyde (tile/tile 16 17)
   })
 
 (defn init []
@@ -17,24 +17,28 @@
                       :target-tile (tile/tile 25 0)
                       :home (tile/tile 25 0)
                       :face :west ; TODO - choose starting face better?
+                      :in-da-house false
                       :next-turn :none}
              :pinky {:pos (tile/left (start-tiles :pinky))
                      :tile (start-tiles :pinky)
                      :target-tile (tile/tile 2 0)
                      :home (tile/tile 2 0)
-                     :face :west ; TODO - choose starting face better?
+                     :face :south ; TODO - choose starting face better?
+                     :in-da-house true
                      :next-turn :none}
              :inky {:pos (tile/left (start-tiles :inky))
                     :tile (start-tiles :inky)
                     :target-tile (tile/tile 27 35)
                     :home (tile/tile 27 35)
-                    :face :west ; TODO - choose starting face better?
+                    :face :north ; TODO - choose starting face better?
+                    :in-da-house true
                     :next-turn :none}
              :clyde {:pos (tile/left (start-tiles :clyde))
                      :tile (start-tiles :clyde)
                      :target-tile (tile/tile 0 35)
                      :home (tile/tile 0 35)
-                     :face :west ; TODO - choose starting face better?
+                     :face :north ; TODO - choose starting face better?
+                     :in-da-house true
                      :next-turn :none}})
 
 (defn offset [[x1 y1] [x2 y2]]
