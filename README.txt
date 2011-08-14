@@ -5,7 +5,6 @@ todo
  - pacman stops for 3 frames when he eats energy (not 1 like pellets)
  - pacman dies if eaten + lives etc
  - fast cornering
- - ghosts start in the ghost house
  - energy -> frightened ghosts, scatter timer stops, pacman can eat them
 
  - hi-score table in local storage
@@ -17,6 +16,9 @@ todo
  - FF 4,5 - SVG error caused by -ve radii in arcTo commands
 
 done
+ - levels have different properties 14/8
+ - continue to next level after clear board 14/8
+ - ghosts start in the ghost house 14/8
  - ghosts reverse direction on mode-change 13/8
  - proper timings for scattering etc 13/8
  - ghosts can't turn up/down towards their house 13/8
