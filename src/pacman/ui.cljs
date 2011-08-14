@@ -93,10 +93,10 @@
 (def pupil-radius-x 1)
 (def pupil-radius-y 1.5)
 
-(defn create-ghost-elems [field {[x y] :pos [tx ty] :target-tile} color]
+(defn create-ghost-elems [field {[x y] :pos} color]
   {:pos (.drawEllipse field x y 6 6 nil (gfx/SolidFill. color))
    :body (.drawRect field (- x 6) y 12 6 nil (gfx/SolidFill. color))
-   :target (.drawEllipse field tx ty 2 2 (gfx/Stroke. 1 color) nil)
+   :target (.drawEllipse field -10 -10 2 2 (gfx/Stroke. 1 color) nil)
    :leye (.drawEllipse field (- x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
    :reye (.drawEllipse field (+ x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
    :lpupil (.drawEllipse field (- x es) y pupil-radius-x pupil-radius-y nil (gfx/SolidFill. "#00F"))
