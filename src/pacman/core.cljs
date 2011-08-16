@@ -10,6 +10,7 @@
     [goog.date :as date]))
 
 (def points {:pellet 10 :energy 50 :no-food 0})
+(def freeze-times {:pellet 1 :energy 3 :no-food 0})
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1] :none [0 0]})
 
@@ -17,7 +18,10 @@
                    :tile (_tile/tile 14 26)
                    :face :west
                    :move-dir :west
-                   :food-count 0})
+                   :food-count 0
+                   :freeze 0
+                   :dead false
+                   :lives 3})
 
 (def opposite-dir {:east :west
                    :west :east
@@ -50,9 +54,19 @@
         old-dir))))
 
 (defn get-pacman-speed [state]
-  (if (get-in state [:pacman :frozen])
+  (if (not= 0 (get-in state [:pacman :freeze]))
     0
     (get-in state [:level-info :pacman-speed])))
+
+(defn dec-if-gt-zero [x]
+  (if (< 0 x) (dec x) 0))
+
+(defn pman-ghost-collision? [state]
+  (or
+    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :blinky :tile]))
+    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :pinky :tile]))
+    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :inky :tile]))
+    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :clyde :tile]))))
 
 (defn tick-pacman [state kp]
   (let [{old :pacman board :board tick :tick} state
@@ -65,23 +79,30 @@
 
     (ui/put-pacman! [nx ny] new-face tick)
 
-    (let [[new-board score-diff frozen food-count]
+    (let [[new-board score-diff freeze food-count]
           (if (and (not= (get-in board [new-tile :food]) :no-food) (not= (old :tile) new-tile))
             (do
               (ui/eat-at! new-tile)
-              [(assoc-in board [new-tile :food] :no-food) (points (get-in board [new-tile :food])) true (inc (old :food-count))])
-            [board 0 false (old :food-count)])]
 
-      (assoc state
-        :pacman (assoc old
-        :face new-face
-        :move-dir new-move-dir
-        :pos [nx ny]
-        :tile new-tile
-        :food-count food-count
-        :frozen frozen)
-        :score (+ (state :score) score-diff)
-        :board new-board))))
+              [(assoc-in board [new-tile :food] :no-food)
+               (points (get-in board [new-tile :food]))
+               (freeze-times (get-in board [new-tile :food]))
+               (inc (old :food-count))])
+            [board 0 (dec-if-gt-zero (old :freeze)) (old :food-count)])]
+
+      (let [is-dead (and (not= (state :ghost-mode) :frightened) (pman-ghost-collision? state))]
+        (assoc state
+          :pacman (assoc old
+          :face new-face
+          :move-dir new-move-dir
+          :pos [nx ny]
+          :tile new-tile
+          :food-count food-count
+          :freeze freeze
+          :dead is-dead
+          )
+          :score (+ (state :score) score-diff)
+          :board new-board)))))
 
 (defn ghost-turn [ghost]
   (let [[x y] (ghost :pos)]
@@ -200,16 +221,15 @@
 
 (defn next-state [old-state kp]
 
+  ; TODO - it would nice to rewrite this using only "->"
   (let [new-state (assoc old-state :ghost-mode (new-ghost-mode old-state))
         new-state (assoc new-state :ghosts (tick-ghost-targets old-state))
 
         new-state (tick-pacman new-state kp)
-        new-state (assoc new-state :ghosts (tick-ghosts (old-state :ghost-mode) new-state))
+        new-state (assoc new-state :ghosts (tick-ghosts (old-state :ghost-mode) new-state)) ; ie avoid refering to new-state here.
 
-        new-state (assoc new-state :tick (inc (old-state :tick)))
-        ]
-    new-state
-    ))
+        new-state (assoc new-state :tick (inc (old-state :tick)))]
+    new-state))
 
 (defn current-time []
   (. (date/DateTime.) (getTime)))
@@ -228,11 +248,18 @@
     (if (not= (state :score) (next :score))
       (ui/update-score! (next :score)))
 
-    (if (= 244 (get-in next [:pacman :food-count]))
-      (timer/callOnce #(wait-for-start (next :score) (inc (next :level-no))))
-      (timer/callOnce #(gameloop next now) real-sleep))))
+    (if (get-in state [:pacman :dead])
+      (timer/callOnce #(wait-for-start (next :score) (next :level-no) (next :board)))
 
-(defn wait-for-start [score level]
+      (if (= 244 (get-in next [:pacman :food-count]))
+        (timer/callOnce #(reset-and-restart (next :score) (inc (next :level-no))))
+        (timer/callOnce #(gameloop next now) real-sleep)))))
+
+(defn reset-and-restart [score level]
+  (ui/reset-edibles!)
+  (wait-for-start score level (board/get-default)))
+
+(defn wait-for-start [score level board]
 
   (ui/show-ready-message! level)
 
@@ -240,23 +267,21 @@
     (do
       (keyz/consume!)
       (ui/clear-ready-message!)
-      (ui/reset-edibles!)
       (gameloop {:pacman pacman-start
                  :ghosts (ghosts/init)
-                 :board (board/get-default)
+                 :board board
                  :tick 0
                  :score score
-                 :ghost-mode :scatter ; TODO - this should be in :ghosts
-                 :frozen false ;TODO this should be a count, in :pacman
+                 :ghost-mode :scatter
                  :level-no level
                  :level-info (levels/level-info level)}
         (current-time)))
 
-    (timer/callOnce #(wait-for-start score level) 50)))
+    (timer/callOnce #(wait-for-start score level board) 50)))
 
 (do
   (board/load)
   (ui/initialize (board/get-default) pacman-start (ghosts/init))
   (keyz/listen)
-  (wait-for-start 0 1))
+  (wait-for-start 0 1 (board/get-default)))
 
