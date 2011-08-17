@@ -68,6 +68,13 @@
     (= (get-in state [:pacman :tile]) (get-in state [:ghosts :inky :tile]))
     (= (get-in state [:pacman :tile]) (get-in state [:ghosts :clyde :tile]))))
 
+(defn get-fright-ticks-for [ghost state]
+  (let [ghost (get-in state [:ghosts ghost])
+        fright-time (get-in state [:level-info :ghost-fright-time])]
+    (cond
+      (ghost :in-da-house) 0
+      :else fright-time)))
+
 (defn tick-pacman [state kp]
   (let [{old :pacman board :board tick :tick} state
         [x y] (old :pos)
@@ -79,7 +86,7 @@
 
     (ui/put-pacman! [nx ny] new-face tick)
 
-    (let [[new-board score-diff freeze food-count]
+    (let [[new-board score-diff freeze food-count new-ghosts]
           (if (and (not= (get-in board [new-tile :food]) :no-food) (not= (old :tile) new-tile))
             (do
               (ui/eat-at! new-tile)
@@ -87,20 +94,28 @@
               [(assoc-in board [new-tile :food] :no-food)
                (points (get-in board [new-tile :food]))
                (freeze-times (get-in board [new-tile :food]))
-               (inc (old :food-count))])
-            [board 0 (dec-if-gt-zero (old :freeze)) (old :food-count)])]
+               (inc (old :food-count))
+               (if (= :energy (get-in board [new-tile :food]))
+                 (-> (state :ghosts)
+                   (assoc-in [:blinky :fright-ticks] (get-fright-ticks-for :blinky state))
+                   (assoc-in [:pinky :fright-ticks] (get-fright-ticks-for :pinky state))
+                   (assoc-in [:inky :fright-ticks] (get-fright-ticks-for :inky state))
+                   (assoc-in [:clyde :fright-ticks] (get-fright-ticks-for :clyde state)))
+                 (state :ghosts))
+               ])
+            [board 0 (dec-if-gt-zero (old :freeze)) (old :food-count) (state :ghosts)])]
 
-      (let [is-dead (and (not= (state :ghost-mode) :frightened) (pman-ghost-collision? state))]
+      (let [is-dead (pman-ghost-collision? state)]
         (assoc state
           :pacman (assoc old
-          :face new-face
-          :move-dir new-move-dir
-          :pos [nx ny]
-          :tile new-tile
-          :food-count food-count
-          :freeze freeze
-          :dead is-dead
-          )
+            :face new-face
+            :move-dir new-move-dir
+            :pos [nx ny]
+            :tile new-tile
+            :food-count food-count
+            :freeze freeze
+            :dead is-dead)
+          :ghosts  new-ghosts
           :score (+ (state :score) score-diff)
           :board new-board)))))
 
@@ -149,7 +164,7 @@
 
   (if (>= food-count (get-in level-info [:ghost-house-dotcounts name]))
     (let [new-ghost (ghost-leaving-da-house-tick name ghost level-info)]
-      (ui/put-ghost! name (new-ghost :pos) (new-ghost :face) (new-ghost :target-tile))
+      (ui/put-ghost! name (new-ghost :pos) (new-ghost :face) (new-ghost :target-tile) :normal)
       new-ghost)
 
     (let [[x y] (ghost :pos)
@@ -157,15 +172,20 @@
           [dx dy] (map #(* (level-info :ghost-house-speed) %) (deltas new-face))
           [nx ny] [(+ x dx) (+ y dy)]]
 
-      (ui/put-ghost! name [nx ny] new-face (ghost :target-tile))
+      (ui/put-ghost! name [nx ny] new-face (ghost :target-tile) :normal)
 
       (assoc ghost :face new-face :pos [nx ny]))))
 
+(defn frightened-ghost-tick [name ghost]
+  (ui/put-ghost! name (ghost :pos) :none (ghost :target-tile) :frightened)
+  (assoc ghost :fright-ticks (dec (ghost :fright-ticks))))
+
 (defn tick-ghost [name ghost {level-info :level-info mode :ghost-mode {food-count :food-count} :pacman} old-mode]
+  (cond
+    (ghost :in-da-house) (ghost-in-da-house-tick name ghost level-info food-count)
+    (< 0 (ghost :fright-ticks)) (frightened-ghost-tick name ghost)
 
-  (if (ghost :in-da-house)
-    (ghost-in-da-house-tick name ghost level-info food-count)
-
+    :else
     (let [turnaround (not= mode old-mode)
           [x y] (ghost :pos)
           new-face (if turnaround (opposite-dir (ghost :face)) (ghost-turn ghost))
@@ -173,7 +193,7 @@
           [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
           new-tile (_tile/tile-at nx ny)]
 
-      (ui/put-ghost! name [nx ny] new-face (ghost :target-tile))
+      (ui/put-ghost! name [nx ny] new-face (ghost :target-tile) :normal)
 
       (let [next-turn
             (if (or turnaround (not= (ghost :tile) new-tile))

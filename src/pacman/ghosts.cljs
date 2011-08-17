@@ -1,6 +1,6 @@
 (ns pacman.ghosts
   (:require [pacman.util :as util]
-            [pacman.tile :as tile]))
+    [pacman.tile :as tile]))
 
 (def deltas {:west [-1 0] :east [1 0] :north [0 -1] :south [0 1]})
 
@@ -12,34 +12,38 @@
   })
 
 (defn init []
-            {:blinky {:pos (tile/left (start-tiles :blinky))
-                      :tile (start-tiles :blinky)
-                      :target-tile (tile/tile 25 0)
-                      :home (tile/tile 25 0)
-                      :face :west ; TODO - choose starting face better?
-                      :in-da-house false
-                      :next-turn :none}
-             :pinky {:pos (tile/left (start-tiles :pinky))
-                     :tile (start-tiles :pinky)
-                     :target-tile (tile/tile 2 0)
-                     :home (tile/tile 2 0)
-                     :face :south ; TODO - choose starting face better?
-                     :in-da-house true
-                     :next-turn :none}
-             :inky {:pos (tile/left (start-tiles :inky))
-                    :tile (start-tiles :inky)
-                    :target-tile (tile/tile 27 35)
-                    :home (tile/tile 27 35)
-                    :face :north ; TODO - choose starting face better?
-                    :in-da-house true
-                    :next-turn :none}
-             :clyde {:pos (tile/left (start-tiles :clyde))
-                     :tile (start-tiles :clyde)
-                     :target-tile (tile/tile 0 35)
-                     :home (tile/tile 0 35)
-                     :face :north ; TODO - choose starting face better?
-                     :in-da-house true
-                     :next-turn :none}})
+  {:blinky {:pos (tile/left (start-tiles :blinky))
+            :tile (start-tiles :blinky)
+            :target-tile (tile/tile 25 0)
+            :home (tile/tile 25 0)
+            :face :west ; TODO - choose starting face better?
+            :in-da-house false
+            :fright-ticks 0
+            :next-turn :none}
+   :pinky {:pos (tile/left (start-tiles :pinky))
+           :tile (start-tiles :pinky)
+           :target-tile (tile/tile 2 0)
+           :home (tile/tile 2 0)
+           :face :south ; TODO - choose starting face better?
+           :in-da-house true
+           :fright-ticks 0
+           :next-turn :none}
+   :inky {:pos (tile/left (start-tiles :inky))
+          :tile (start-tiles :inky)
+          :target-tile (tile/tile 27 35)
+          :home (tile/tile 27 35)
+          :face :north ; TODO - choose starting face better?
+          :in-da-house true
+          :fright-ticks 0
+          :next-turn :none}
+   :clyde {:pos (tile/left (start-tiles :clyde))
+           :tile (start-tiles :clyde)
+           :target-tile (tile/tile 0 35)
+           :home (tile/tile 0 35)
+           :face :north ; TODO - choose starting face better?
+           :in-da-house true
+           :fright-ticks 0
+           :next-turn :none}})
 
 (defn offset [[x1 y1] [x2 y2]]
   [(+ x1 x2) (+ y1 y2)])
@@ -47,7 +51,7 @@
 (defn dist-sq [[x1 y1] [x2 y2]]
   (+ (* (- x1 x2) (- x1 x2)) (* (- y1 y2) (- y1 y2))))
 
-(defn choose-exit[tile target choices]
+(defn choose-exit [tile target choices]
   (let [distances (zipmap choices (map #(dist-sq target (offset tile (deltas %))) choices))]
     (first (reduce #(if (< (second %2) (second %1)) %2 %1) '(:too-big 1000000) distances))))
 

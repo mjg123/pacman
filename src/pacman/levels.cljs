@@ -40,109 +40,130 @@
 
 (def level-info-data
   {
-    1 {:pacman-speed 0.8 :ghost-speed 0.75 :ghost-tunnel-speed 0.4 :ghost-house-speed 0.5
+    1 {:pacman-speed 0.8 :ghost-speed 0.75 :ghost-tunnel-speed 0.4 :ghost-house-speed 0.5 :ghost-fright-speed 0.5
        :ghost-mode-times (scatter-chase-times :one)
        :ghost-house-dotcounts (ghost-house-leave-times :one)
+       :ghost-fright-time (tick-at 6)
        }
 
-    2 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5
+    2 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5 :ghost-fright-speed 0.55
        :ghost-mode-times (scatter-chase-times :two-three-four)
        :ghost-house-dotcounts (ghost-house-leave-times :two)
+       :ghost-fright-time (tick-at 5)
        }
 
-    3 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5
+    3 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5 :ghost-fright-speed 0.55
        :ghost-mode-times (scatter-chase-times :two-three-four)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 4)
        }
 
-    4 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5
+    4 {:pacman-speed 0.9 :ghost-speed 0.85 :ghost-tunnel-speed 0.45 :ghost-house-speed 0.5 :ghost-fright-speed 0.55
        :ghost-mode-times (scatter-chase-times :two-three-four)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 3)
        }
 
-    5 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    5 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 2)
        }
 
-    6 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    6 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 5)
        }
 
-    7 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    7 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 2)
        }
 
-    8 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    8 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 2)
        }
 
-    9 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    9 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    10 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    10 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 5)
        }
 
-    11 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    11 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 2)
        }
 
-    12 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    12 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    13 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    13 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    14 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    14 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 3)
        }
 
-    15 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    15 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    16 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    16 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    17 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    17 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time 0
        }
 
-    18 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    18 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time (tick-at 1)
        }
 
-    19 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    19 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time 0
        }
 
-    20 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    20 {:pacman-speed 1 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time 0
        }
 
-    21 {:pacman-speed 0.9 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5
+    21 {:pacman-speed 0.9 :ghost-speed 0.95 :ghost-tunnel-speed 0.5 :ghost-house-speed 0.5 :ghost-fright-speed 0.6
        :ghost-mode-times (scatter-chase-times :five-plus)
        :ghost-house-dotcounts (ghost-house-leave-times :more)
+       :ghost-fright-time 0
        }
 
     })

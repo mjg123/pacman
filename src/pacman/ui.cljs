@@ -9,10 +9,12 @@
 (def pellet-fill (gfx/SolidFill. "#FFB9AF"))
 (def eaten-fill (gfx/SolidFill. "#000"))
 (def pacman-fill (gfx/SolidFill. "#FF0"))
-(def ghost-colors {:blinky "#F00"
-                   :pinky "#ffb8ff"
-                   :inky "#0FF"
-                   :clyde "#ffb851"})
+(def ghost-colors {:blinky (gfx/SolidFill. "#F00")
+                   :pinky (gfx/SolidFill. "#ffb8ff")
+                   :inky (gfx/SolidFill. "#0FF")
+                   :clyde (gfx/SolidFill. "#ffb851")
+                   :frightened (gfx/SolidFill. "#448")
+                   :recovering (gfx/SolidFill. "#FFF")})
 
 (defn black-background [field]
   (.drawRect field 0 0 (.width field) (.height field) nil (gfx/SolidFill. "#000")))
@@ -63,8 +65,8 @@
       (def pacman-elems [arc1 arc2]))))
 
 (def faces {:north 0 :south 180 :east 90 :west 270 :none 0})
-(def eye-deltas {:north [0 -2] :south [0 0] :east [2 0] :west [-2 0]})
-(def pupil-deltas {:north [0 -3] :south [0 1] :east [3 0] :west [-3 0]})
+(def eye-deltas {:north [0 -2] :south [0 0] :east [2 0] :west [-2 0] :none [0 0]})
+(def pupil-deltas {:north [0 -3] :south [0 1] :east [3 0] :west [-3 0] :none [0 0]})
 
 (defn waka-waka "angle of pacman's open mouth" [tick]
   (let [t (* 8 tick)
@@ -79,17 +81,20 @@
 
 (def es 2.2) ; eye-spacing
 
-(defn put-ghost! [ghost [x y] face target]
+(defn put-ghost! [ghost-name [x y] face target mode]
   (let [[tx ty] (tile/middle target)
         [edx edy] (eye-deltas face)
-        [pdx pdy] (pupil-deltas face)]
-    (.setCenter (get-in ghost-elems [ghost :pos]) x y)
-    (.setPosition (get-in ghost-elems [ghost :body]) (- x 6) y)
-    (.setCenter (get-in ghost-elems [ghost :target]) tx ty)
-    (.setCenter (get-in ghost-elems [ghost :leye]) (+ x edx (- es)) (+ y edy))
-    (.setCenter (get-in ghost-elems [ghost :lpupil]) (+ x pdx (- es)) (+ y pdy))
-    (.setCenter (get-in ghost-elems [ghost :reye]) (+ x edx es) (+ y edy))
-    (.setCenter (get-in ghost-elems [ghost :rpupil]) (+ x pdx es) (+ y pdy))))
+        [pdx pdy] (pupil-deltas face)
+        fill (cond (= :normal mode) (ghost-colors ghost-name) :else (ghost-colors mode))]
+    (.setFill (get-in ghost-elems [ghost-name :pos]) fill)
+    (.setFill (get-in ghost-elems [ghost-name :body]) fill)
+    (.setCenter (get-in ghost-elems [ghost-name :pos]) x y)
+    (.setPosition (get-in ghost-elems [ghost-name :body]) (- x 6) y)
+    (.setCenter (get-in ghost-elems [ghost-name :target]) tx ty)
+    (.setCenter (get-in ghost-elems [ghost-name :leye]) (+ x edx (- es)) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost-name :lpupil]) (+ x pdx (- es)) (+ y pdy))
+    (.setCenter (get-in ghost-elems [ghost-name :reye]) (+ x edx es) (+ y edy))
+    (.setCenter (get-in ghost-elems [ghost-name :rpupil]) (+ x pdx es) (+ y pdy))))
 
 (def eye-radius-x 2)
 (def eye-radius-y 2.5)
@@ -97,8 +102,8 @@
 (def pupil-radius-y 1.5)
 
 (defn create-ghost-elems [field {[x y] :pos} color]
-  {:pos (.drawEllipse field x y 6 6 nil (gfx/SolidFill. color))
-   :body (.drawRect field (- x 6) y 12 6 nil (gfx/SolidFill. color))
+  {:pos (.drawEllipse field x y 6 6 nil color)
+   :body (.drawRect field (- x 6) y 12 6 nil color)
    :target (.drawEllipse field -10 -10 2 2 (gfx/Stroke. 1 color) nil)
    :leye (.drawEllipse field (- x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
    :reye (.drawEllipse field (+ x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
