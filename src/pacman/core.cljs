@@ -215,6 +215,7 @@
       :pos [nx ny]
       :tile new-tile
       :face new-face
+      :next-turn (opposite-dir new-face)
       :dead dead
       :fright-ticks (dec (ghost :fright-ticks)))))
 
