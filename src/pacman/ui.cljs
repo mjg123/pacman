@@ -14,7 +14,8 @@
                    :inky (gfx/SolidFill. "#0FF")
                    :clyde (gfx/SolidFill. "#ffb851")
                    :frightened (gfx/SolidFill. "#448")
-                   :recovering (gfx/SolidFill. "#FFF")})
+                   :recovering (gfx/SolidFill. "#FFF")
+                   :dead (gfx/SolidFill. "#FFF0")})
 
 (defn black-background [field]
   (.drawRect field 0 0 (.width field) (.height field) nil (gfx/SolidFill. "#000")))
@@ -86,8 +87,10 @@
         [edx edy] (eye-deltas face)
         [pdx pdy] (pupil-deltas face)
         fill (cond (= :normal mode) (ghost-colors ghost-name) :else (ghost-colors mode))]
+
     (.setFill (get-in ghost-elems [ghost-name :pos]) fill)
     (.setFill (get-in ghost-elems [ghost-name :body]) fill)
+
     (.setCenter (get-in ghost-elems [ghost-name :pos]) x y)
     (.setPosition (get-in ghost-elems [ghost-name :body]) (- x 6) y)
     (.setCenter (get-in ghost-elems [ghost-name :target]) tx ty)
@@ -104,7 +107,7 @@
 (defn create-ghost-elems [field {[x y] :pos} color]
   {:pos (.drawEllipse field x y 6 6 nil color)
    :body (.drawRect field (- x 6) y 12 6 nil color)
-   :target (.drawEllipse field -10 -10 2 2 (gfx/Stroke. 1 color) nil)
+   :target (.drawEllipse field -10 -10 2 2 nil color) ; TODO hide targets!
    :leye (.drawEllipse field (- x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
    :reye (.drawEllipse field (+ x es) y eye-radius-x eye-radius-y nil (gfx/SolidFill. "#FFF"))
    :lpupil (.drawEllipse field (- x es) y pupil-radius-x pupil-radius-y nil (gfx/SolidFill. "#00F"))

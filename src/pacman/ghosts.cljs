@@ -19,6 +19,7 @@
             :face :west ; TODO - choose starting face better?
             :in-da-house false
             :fright-ticks 0
+            :dead false
             :next-turn :none}
    :pinky {:pos (tile/left (start-tiles :pinky))
            :tile (start-tiles :pinky)
@@ -27,6 +28,7 @@
            :face :south ; TODO - choose starting face better?
            :in-da-house true
            :fright-ticks 0
+           :dead false
            :next-turn :none}
    :inky {:pos (tile/left (start-tiles :inky))
           :tile (start-tiles :inky)
@@ -35,6 +37,7 @@
           :face :north ; TODO - choose starting face better?
           :in-da-house true
           :fright-ticks 0
+          :dead false
           :next-turn :none}
    :clyde {:pos (tile/left (start-tiles :clyde))
            :tile (start-tiles :clyde)
@@ -43,6 +46,7 @@
            :face :north ; TODO - choose starting face better?
            :in-da-house true
            :fright-ticks 0
+           :dead false
            :next-turn :none}})
 
 (defn offset [[x1 y1] [x2 y2]]

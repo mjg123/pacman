@@ -21,7 +21,7 @@
                    :food-count 0
                    :freeze 0
                    :dead false
-                   :lives 3})
+                   :ghost-eat-multiplier 0})
 
 (def opposite-dir {:east :west
                    :west :east
@@ -61,12 +61,15 @@
 (defn dec-if-gt-zero [x]
   (if (< 0 x) (dec x) 0))
 
-(defn pman-ghost-collision? [state]
+(defn frightened? [ghost]
+  (< 0 (ghost :fright-ticks)))
+
+(defn pman-killed-by-ghost? [state]
   (or
-    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :blinky :tile]))
-    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :pinky :tile]))
-    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :inky :tile]))
-    (= (get-in state [:pacman :tile]) (get-in state [:ghosts :clyde :tile]))))
+    (and (not (frightened? (get-in state [:ghosts :blinky]))) (= (get-in state [:pacman :tile]) (get-in state [:ghosts :blinky :tile])))
+    (and (not (frightened? (get-in state [:ghosts :pinky]))) (= (get-in state [:pacman :tile]) (get-in state [:ghosts :pinky :tile])))
+    (and (not (frightened? (get-in state [:ghosts :inky]))) (= (get-in state [:pacman :tile]) (get-in state [:ghosts :inky :tile])))
+    (and (not (frightened? (get-in state [:ghosts :clyde]))) (= (get-in state [:pacman :tile]) (get-in state [:ghosts :clyde :tile])))))
 
 (defn get-fright-ticks-for [ghost state]
   (let [ghost (get-in state [:ghosts ghost])
@@ -86,8 +89,8 @@
 
     (ui/put-pacman! [nx ny] new-face tick)
 
-    (let [[new-board score-diff freeze food-count new-ghosts]
-          (if (and (not= (get-in board [new-tile :food]) :no-food) (not= (old :tile) new-tile))
+    (let [[new-board score-diff freeze food-count new-ghosts ghost-eat-multiplier]
+          (if (and (not= (get-in board [new-tile :food]) :no-food) (not= (old :tile) new-tile)) ; ie we moved into a new tile, which has food in it.
             (do
               (ui/eat-at! new-tile)
 
@@ -100,12 +103,17 @@
                    (assoc-in [:blinky :fright-ticks] (get-fright-ticks-for :blinky state))
                    (assoc-in [:pinky :fright-ticks] (get-fright-ticks-for :pinky state))
                    (assoc-in [:inky :fright-ticks] (get-fright-ticks-for :inky state))
-                   (assoc-in [:clyde :fright-ticks] (get-fright-ticks-for :clyde state)))
+                   (assoc-in [:clyde :fright-ticks] (get-fright-ticks-for :clyde state))
+                   (assoc-in [:blinky :face] (opposite-dir (get-in state [:ghosts :blinky :face])))
+                   (assoc-in [:pinky :face] (opposite-dir (get-in state [:ghosts :pinky :face])))
+                   (assoc-in [:inky :face] (opposite-dir (get-in state [:ghosts :inky :face])))
+                   (assoc-in [:clyde :face] (opposite-dir (get-in state [:ghosts :clyde :face]))))
                  (state :ghosts))
+               200
                ])
-            [board 0 (dec-if-gt-zero (old :freeze)) (old :food-count) (state :ghosts)])]
+            [board 0 (dec-if-gt-zero (old :freeze)) (old :food-count) (state :ghosts) 0])]
 
-      (let [is-dead (pman-ghost-collision? state)]
+      (let [is-dead (pman-killed-by-ghost? state)]
         (assoc state
           :pacman (assoc old
             :face new-face
@@ -114,8 +122,9 @@
             :tile new-tile
             :food-count food-count
             :freeze freeze
+            :ghost-eat-multiplier ghost-eat-multiplier
             :dead is-dead)
-          :ghosts  new-ghosts
+          :ghosts new-ghosts
           :score (+ (state :score) score-diff)
           :board new-board)))))
 
@@ -176,14 +185,62 @@
 
       (assoc ghost :face new-face :pos [nx ny]))))
 
-(defn frightened-ghost-tick [name ghost]
-  (ui/put-ghost! name (ghost :pos) :none (ghost :target-tile) :frightened)
-  (assoc ghost :fright-ticks (dec (ghost :fright-ticks))))
-
-(defn tick-ghost [name ghost {level-info :level-info mode :ghost-mode {food-count :food-count} :pacman} old-mode]
+(defn get-ghost-fright-mode [ticks]
   (cond
+    (< ticks 10) :frightened
+    (< ticks 20) :recovering
+    (< ticks 30) :frightened
+    (< ticks 40) :recovering
+    (< ticks 50) :frightened
+    (< ticks 60) :recovering
+    :else :frightened))
+
+(defn random-turn [ghost]
+  (let [[x y] (ghost :pos)]
+    (if (_tile/tile-center? x y)
+      (rand-nth (remove #(= % (opposite-dir (ghost :face))) (board/prop (ghost :tile) :ghost-exits)))
+      (ghost :face))))
+
+(defn frightened-ghost-tick [name ghost level-info pacman-tile]
+  (let [[x y] (ghost :pos)
+        new-face (random-turn ghost)
+        [dx dy] (map #(* (level-info :ghost-fright-speed) %) (deltas new-face))
+        [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]
+        new-tile (_tile/tile-at nx ny)
+        dead (= (ghost :tile) pacman-tile)]
+
+    (ui/put-ghost! name (ghost :pos) :none (ghost :target-tile) (get-ghost-fright-mode (ghost :fright-ticks)))
+
+    (assoc ghost
+      :pos [nx ny]
+      :tile new-tile
+      :face new-face
+      :dead dead
+      :fright-ticks (dec (ghost :fright-ticks)))))
+
+(def dead-ghost-target-tile [13 14])
+
+(defn ghost-dead-tick [name ghost]
+
+  (if (= (_tile/right dead-ghost-target-tile) (map i (ghost :pos)))
+    (assoc ghost
+      :fright-ticks 0
+      :dead false)
+
+    (let [[x y] (ghost :pos)
+          exits (board/prop (ghost :tile) :exits)
+          valid-exits (remove #(= (opposite-dir (ghost :face)) %) exits)
+          new-face (if (_tile/tile-center? x y) (ghosts/choose-exit (ghost :tile) dead-ghost-target-tile valid-exits) (ghost :face))
+          [dx dy] (deltas new-face)
+          [nx ny] [(mod (+ 224 x dx) 224) (+ y dy)]]
+      (ui/put-ghost! name [nx ny] new-face (ghost :target-tile) :dead)
+      (assoc ghost :pos [nx ny] :tile (_tile/tile-at nx ny) :face new-face))))
+
+(defn tick-ghost [name ghost {level-info :level-info mode :ghost-mode {food-count :food-count pacman-tile :tile} :pacman} old-mode]
+  (cond
+    (ghost :dead) (ghost-dead-tick name ghost)
     (ghost :in-da-house) (ghost-in-da-house-tick name ghost level-info food-count)
-    (< 0 (ghost :fright-ticks)) (frightened-ghost-tick name ghost)
+    (< 0 (ghost :fright-ticks)) (frightened-ghost-tick name ghost level-info pacman-tile)
 
     :else
     (let [turnaround (not= mode old-mode)
@@ -236,8 +293,13 @@
       (assoc-in [:inky :target-tile] (ghosts/inky-target p (g :blinky)))
       (assoc-in [:clyde :target-tile] (ghosts/clyde-target p (g :clyde))))))
 
-(defn new-ghost-mode [{tick :tick {times :ghost-mode-times} :level-info old-mode :ghost-mode}]
+(defn new-ghost-mode [{tick :ghost-pattern-tick {times :ghost-mode-times} :level-info old-mode :ghost-mode}]
   (get times tick old-mode))
+
+(defn ghost-pattern-tick [state]
+  (if (= 0 (reduce + (map #(get-in state [:ghosts % :fright-ticks]) [:blinky :pinky :inky :clyde]))) ; ie if all ghosts are not frightened
+    (assoc state :ghost-pattern-tick (inc (state :ghost-pattern-tick)))
+    state))
 
 (defn next-state [old-state kp]
 
@@ -248,7 +310,8 @@
         new-state (tick-pacman new-state kp)
         new-state (assoc new-state :ghosts (tick-ghosts (old-state :ghost-mode) new-state)) ; ie avoid refering to new-state here.
 
-        new-state (assoc new-state :tick (inc (old-state :tick)))]
+        new-state (assoc new-state :tick (inc (old-state :tick)))
+        new-state (ghost-pattern-tick new-state)]
     new-state))
 
 (defn current-time []
@@ -291,6 +354,7 @@
                  :ghosts (ghosts/init)
                  :board board
                  :tick 0
+                 :ghost-pattern-tick 0
                  :score score
                  :ghost-mode :scatter
                  :level-no level
