@@ -29,8 +29,8 @@
       (= code key-codes/D) (reset! keypress :east)
 
       ; vi keys
-      (= code key-codes/J) (reset! keypress :north)
-      (= code key-codes/K) (reset! keypress :south)
+      (= code key-codes/K) (reset! keypress :north)
+      (= code key-codes/J) (reset! keypress :south)
       (= code key-codes/H) (reset! keypress :west)
       (= code key-codes/L) (reset! keypress :east))))
 
